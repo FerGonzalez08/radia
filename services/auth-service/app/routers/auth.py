@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.email import send_password_reset_email, send_verification_email
 from app.core.security import (
     create_access_token,
     decode_access_token,
@@ -77,8 +78,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
     db.add(verification)
     db.commit()
 
-    # TODO: enviar verification_plain por correo vía Resend (app/core/email.py)
-    # Se deja pendiente para no bloquear el resto del servicio hoy.
+    send_verification_email(user.email, verification_plain)
 
     return user
 
@@ -213,7 +213,7 @@ def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(
             expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         ))
         db.commit()
-        # TODO: enviar reset_plain por correo vía Resend.
+        send_password_reset_email(user.email, reset_plain)
 
     # Responde 204 exista o no el email — evita filtrar qué correos están registrados.
     return None
