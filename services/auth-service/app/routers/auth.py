@@ -1,12 +1,13 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.config import ADMIN_ROLE_ID, MENTEE_ROLE_ID, MENTOR_ROLE_ID, settings
+from app.core.deps import get_current_user, require_admin
 from app.core.email import send_password_reset_email, send_verification_email
 from app.core.security import (
     create_access_token,
@@ -21,7 +22,7 @@ from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.models.verification_token import VerificationToken
 from app.schemas.token import RefreshRequest, TokenPair, ValidateSessionResponse
-from app.schemas.user import UserLogin, UserOut, UserRegister
+from app.schemas.user import RoleUpdateRequest, UserLogin, UserOut, UserRegister
 from app.schemas.verification import (
     PasswordResetConfirm,
     PasswordResetRequest,
@@ -50,17 +51,33 @@ def _issue_token_pair(db: Session, user: User) -> TokenPair:
 
     return TokenPair(access_token=access_token, refresh_token=refresh_plain)
 
+def _calculate_age(birth_date: date) -> int:
+    today = datetime.now(timezone.utc).date()
+    age = today.year - birth_date.year
+    if (today.month, today.day) < (birth_date.month, birth_date.day):
+        age -= 1
+    return age
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ese correo ya está registrado")
 
+    if _calculate_age(payload.fecha_nacimiento) < 18:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "No se permite el registro de usuarios menores de edad",
+        )
+    
     user = User(
         email=payload.email,
         password_hash=hash_password(payload.password),
-        role_id=payload.role_id,
+        nombre=payload.nombre,
+        telefono=payload.telefono,
+        sexo=payload.sexo,
+        fecha_nacimiento=payload.fecha_nacimiento,
+        role_id=MENTEE_ROLE_ID,
         is_verified=False,
         is_active=True,
     )
@@ -78,14 +95,47 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
     db.add(verification)
     db.commit()
 
-    send_verification_email(user.email, verification_plain)
+    try:
+        send_verification_email(user.email, verification_plain)
+    except Exception:
+        # El registro no debe fallar si el envío de correo falla — el usuario
+        # ya quedó creado; la verificación puede reintentarse o hacerse manual.
+        pass
 
     return user
 
+def _check_login_lockout(db: Session, email: str) -> datetime | None:
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(minutes=10)
+
+    failed_count = db.query(LoginAttempt).filter(
+        LoginAttempt.email == email,
+        LoginAttempt.success.is_(False),
+        LoginAttempt.created_at >= window_start,
+    ).count()
+
+    if failed_count < 5:
+        return None
+
+    last_failed = db.query(LoginAttempt).filter(
+        LoginAttempt.email == email,
+        LoginAttempt.success.is_(False),
+    ).order_by(LoginAttempt.created_at.desc()).first()
+
+    unlock_at = last_failed.created_at + timedelta(minutes=15)
+    return unlock_at if now < unlock_at else None
 
 @router.post("/login", response_model=TokenPair)
 def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)):
     ip_address = _get_client_ip(request)
+
+    unlock_at = _check_login_lockout(db, payload.email)
+    if unlock_at is not None:
+        remaining_minutes = max(1, int((unlock_at - datetime.now(timezone.utc)).total_seconds() // 60) + 1)
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"Demasiados intentos fallidos. Intenta de nuevo en {remaining_minutes} minuto(s).",
+        )
     user = db.query(User).filter(User.email == payload.email).first()
 
     success = user is not None and verify_password(payload.password, user.password_hash)
@@ -210,7 +260,7 @@ def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(
             user_id=user.id,
             token_hash=hash_opaque_token(reset_plain),
             type="password_reset",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
         ))
         db.commit()
         send_password_reset_email(user.email, reset_plain)
@@ -242,3 +292,39 @@ def confirm_password_reset(payload: PasswordResetConfirm, db: Session = Depends(
 
     db.commit()
     return None
+
+@router.get("/admin/users", response_model=list[UserOut])
+def list_users(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    return db.query(User).order_by(User.created_at.desc()).all()
+
+
+@router.patch("/admin/users/{user_id}/role", response_model=UserOut)
+def update_user_role(
+    user_id: uuid.UUID,
+    payload: RoleUpdateRequest,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if target_user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+
+    if target_user.role_id == ADMIN_ROLE_ID:
+        raise HTTPException(status.HTTP_409_CONFLICT, "No se puede reasignar el rol de un administrador")
+
+    was_mentor = target_user.role_id == MENTOR_ROLE_ID
+    target_user.role_id = payload.role_id
+    db.commit()
+    db.refresh(target_user)
+
+    if was_mentor and payload.role_id != MENTOR_ROLE_ID:
+        # TODO: notificar a Navigation Service para cancelar mentorías activas
+        # de este usuario. Pendiente de definir: llamada síncrona vs evento
+        # asíncrono (ver decisión arquitectónica en RQF-008). No implementado
+        # porque Navigation Service no existe todavía.
+        pass
+
+    return target_user

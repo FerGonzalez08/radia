@@ -20,3 +20,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+import uuid
+
+MENTEE_ROLE_ID = uuid.UUID("123e4567-e89b-12d3-a456-426614174000")
+MENTOR_ROLE_ID = uuid.UUID("223e4567-e89b-12d3-a456-426614174000")
+ADMIN_ROLE_ID = uuid.UUID("323e4567-e89b-12d3-a456-426614174000")
