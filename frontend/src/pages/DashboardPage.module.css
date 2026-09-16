@@ -1,0 +1,112 @@
+.page {
+  padding: var(--space-8) var(--space-8) var(--space-12);
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.hero {
+  position: relative;
+  border-radius: var(--radius-lg);
+  padding: var(--space-10);
+  background:
+    radial-gradient(600px 320px at 90% 0%, rgba(209, 21, 91, 0.16), transparent 60%),
+    radial-gradient(500px 320px at 0% 100%, rgba(104, 45, 144, 0.16), transparent 60%),
+    var(--color-surface);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  margin-bottom: var(--space-8);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary-strong);
+  margin-bottom: var(--space-3);
+}
+
+.hero h1 {
+  font-size: 30px;
+  margin-bottom: var(--space-3);
+}
+
+.headline {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.body {
+  color: var(--color-text-muted);
+  max-width: 540px;
+  margin-bottom: var(--space-6);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: var(--radius-md);
+  background: var(--radia-gradient);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transition: filter var(--transition-fast);
+}
+.cta:hover {
+  filter: brightness(1.06);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-5);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  text-decoration: none;
+  color: var(--color-text);
+  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card svg {
+  color: var(--color-primary-strong);
+}
+
+.card h3 {
+  font-size: 15.5px;
+}
+
+.card p {
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+}
+
+.card:hover {
+  border-color: var(--radia-mid-48);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: var(--space-5);
+  }
+  .hero {
+    padding: var(--space-6);
+  }
+}

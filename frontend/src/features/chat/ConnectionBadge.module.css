@@ -1,0 +1,26 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.online {
+  color: #0d6b48;
+  background: var(--color-success-bg);
+}
+.pending {
+  color: #855407;
+  background: var(--color-warning-bg);
+}
+.offline {
+  color: #a3123d;
+  background: var(--color-danger-bg);
+}
+
+.spin {
+  animation: radia-spin 0.9s linear infinite;
+}
