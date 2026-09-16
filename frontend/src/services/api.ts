@@ -100,7 +100,7 @@ function toApiError(status: number, detail: unknown, fallbackField?: string): Ap
       return new ApiError("Debes verificar tu cuenta antes de iniciar sesión.", { code: "NOT_VERIFIED" });
     }
     if (text === "Account is deactivated") {
-      return new ApiError("Tu cuenta está desactivada. Contacta a una administradora.", { code: "ACCOUNT_DISABLED" });
+      return new ApiError("Tu cuenta está desactivada. Contacta a un administrador.", { code: "ACCOUNT_DISABLED" });
     }
     return new ApiError("No tienes permisos para esta acción.", { code: "FORBIDDEN" });
   }

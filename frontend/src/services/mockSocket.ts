@@ -65,7 +65,7 @@ const CONTACTS_BY_ROLE: Record<Role, SeedContact[]> = {
       nombre: "Laura Gómez",
       rol: "mentor",
       avatarColor: "#9A2177",
-      mensajeBienvenida: "Vista de supervisión: como administradora puedes consultar, no enviar mensajes.",
+      mensajeBienvenida: "Vista de supervisión: como administrador puedes consultar, no enviar mensajes.",
       guion: [],
     },
   ],

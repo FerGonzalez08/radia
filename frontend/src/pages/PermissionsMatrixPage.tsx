@@ -13,7 +13,7 @@ interface Row {
 const ROWS: Row[] = [
   { endpoint: "POST /auth/registro", descripcion: "Crear cuenta nueva", mentee: true, mentor: true, admin: false },
   { endpoint: "POST /auth/login", descripcion: "Iniciar sesión", mentee: true, mentor: true, admin: true },
-  { endpoint: "GET /usuarias", descripcion: "Listar usuarias por rol", mentee: false, mentor: false, admin: true },
+  { endpoint: "GET /usuarias", descripcion: "Listar usuarios por rol", mentee: false, mentor: false, admin: true },
   { endpoint: "PATCH /usuarias/:id/rol", descripcion: "Asignar rol manualmente", mentee: false, mentor: false, admin: true },
   { endpoint: "GET /chat/conversaciones", descripcion: "Ver conversaciones propias", mentee: true, mentor: true, admin: true },
   { endpoint: "POST /chat/mensajes", descripcion: "Enviar mensajes", mentee: true, mentor: true, admin: false },
@@ -43,7 +43,7 @@ export default function PermissionsMatrixPage() {
               <th>Endpoint</th>
               <th>Descripción</th>
               <th style={{ textAlign: "center" }}>Mentee</th>
-              <th style={{ textAlign: "center" }}>Mentora</th>
+              <th style={{ textAlign: "center" }}>Mentor</th>
               <th style={{ textAlign: "center" }}>Admin</th>
             </tr>
           </thead>

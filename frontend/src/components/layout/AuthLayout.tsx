@@ -29,7 +29,7 @@ export function AuthLayout({ children, title, subtitle, eyebrow, footer }: AuthL
         <div className={styles.brandCopy}>
           <p className={styles.brandKicker}>Women Tech UCatólica</p>
           <h1 className={styles.brandTitle}>
-            Conectamos mentees con mentoras que ya recorrieron el camino en STEM.
+            Conectamos mentees con mentores que ya recorrieron el camino en STEM.
           </h1>
           <ul className={styles.brandList}>
             {HIGHLIGHTS.map((item) => (

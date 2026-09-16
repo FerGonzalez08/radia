@@ -141,7 +141,7 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
       <MessageInput
         onSend={sendMessage}
         disabled={!canSend}
-        placeholder={canSend ? undefined : "Modo supervisión: la administradora no puede enviar mensajes"}
+        placeholder={canSend ? undefined : "Modo supervisión: el administrador no puede enviar mensajes"}
       />
     </div>
   );

@@ -132,7 +132,7 @@ export default function RegisterPage() {
     <AuthLayout
       eyebrow="Crea tu cuenta"
       title="Únete a RADIA"
-      subtitle="Regístrate como mentee. Las mentoras se habilitan por una administradora."
+      subtitle="Regístrate como mentee. Los mentores se habilitan por un administrador."
       footer={
         <p>
           ¿Ya tienes cuenta? <Link to="/iniciar-sesion">Inicia sesión</Link>
@@ -244,16 +244,16 @@ export default function RegisterPage() {
         <h3>1. Objeto de la plataforma</h3>
         <p>
           RADIA es un ecosistema digital de mentoría del programa Women Tech UCatólica que conecta a mentees
-          (estudiantes de ingeniería) con mentoras (profesionales o egresadas) para acompañamiento académico y
+          (estudiantes de ingeniería) con mentores (profesionales o egresadas) para acompañamiento académico y
           profesional.
         </p>
         <h3>2. Tratamiento de datos personales</h3>
         <p>
           Tus datos (nombre, correo, teléfono, fecha de nacimiento, sexo) se usan únicamente para gestionar tu
-          cuenta, asignar mentorías y habilitar el chat entre usuarias verificadas, conforme a la Ley 1581 de 2012
+          cuenta, asignar mentorías y habilitar el chat entre usuarios verificados, conforme a la Ley 1581 de 2012
           y la Ley 527 de 1999 sobre mensajes de datos y firma digital.
         </p>
-        <h3>3. Responsabilidades de la usuaria</h3>
+        <h3>3. Responsabilidades del usuario</h3>
         <p>
           Te comprometes a mantener un trato respetuoso dentro del chat, no compartir tus credenciales y notificar
           cualquier uso indebido de tu cuenta.

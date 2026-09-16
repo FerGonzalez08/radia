@@ -12,14 +12,14 @@ import styles from "./UsersPage.module.css";
 const ROLE_FILTERS: Array<{ value: Role | "todas"; label: string }> = [
   { value: "todas", label: "Todas" },
   { value: "mentee", label: "Mentees" },
-  { value: "mentor", label: "Mentoras" },
-  { value: "admin", label: "Administradoras" },
+  { value: "mentor", label: "Mentores" },
+  { value: "admin", label: "Administradores" },
 ];
 
 const STATUS_LABEL: Record<User["estado"], string> = {
-  activo: "Activa",
+  activo: "Activo",
   pendiente: "Pendiente",
-  bloqueado: "Bloqueada",
+  bloqueado: "Bloqueado",
 };
 
 // Roles que una administradora puede asignar manualmente (HU008). El
@@ -27,7 +27,7 @@ const STATUS_LABEL: Record<User["estado"], string> = {
 // que esa opción no se ofrece aquí.
 const ASSIGNABLE_ROLES: Array<{ value: "mentee" | "mentor"; label: string }> = [
   { value: "mentee", label: "Mentee" },
-  { value: "mentor", label: "Mentora" },
+  { value: "mentor", label: "Mentor" },
 ];
 
 export default function UsersPage() {
@@ -47,7 +47,7 @@ export default function UsersPage() {
       const result = await listAllUsers(accessToken);
       setUsers(result);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "No pudimos cargar el listado de usuarias.");
+      setError(err instanceof ApiError ? err.message : "No pudimos cargar el listado de usuarios.");
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ export default function UsersPage() {
       const updated = await updateUserRole(accessToken, user.id, newRole);
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "No pudimos actualizar el rol de esta usuaria.");
+      setError(err instanceof ApiError ? err.message : "No pudimos actualizar el rol de este usuario.");
     } finally {
       setSavingId(null);
     }
@@ -80,8 +80,8 @@ export default function UsersPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Usuarias y roles"
-        subtitle="Listado de usuarias registradas en RADIA (HU010) — asignación manual de roles (HU008) y consulta por rol (HU010)."
+        title="Usuarios y roles"
+        subtitle="Listado de usuarios registrados en RADIA (HU010) — asignación manual de roles (HU008) y consulta por rol (HU010)."
       />
 
       {error && <Banner tone="danger">{error}</Banner>}
@@ -106,14 +106,14 @@ export default function UsersPage() {
 
       {loading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
-          <Spinner label="Cargando usuarias..." />
+          <Spinner label="Cargando usuarios..." />
         </div>
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Usuaria</th>
+                <th>Usuario</th>
                 <th>Correo</th>
                 <th>Rol</th>
                 <th>Estado</th>
@@ -157,7 +157,7 @@ export default function UsersPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={4} className={styles.empty}>
-                    No se encontraron usuarias con ese criterio.
+                    No se encontraron usuarios con ese criterio.
                   </td>
                 </tr>
               )}

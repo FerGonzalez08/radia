@@ -12,7 +12,7 @@ export default function ForbiddenPage() {
       <p className={styles.code}>Error 403</p>
       <h1 className={styles.title}>No tienes permiso para ver esta sección</h1>
       <p className={styles.text}>
-        Tu rol actual no tiene acceso a esta página. Si crees que esto es un error, contacta a una administradora.
+        Tu rol actual no tiene acceso a esta página. Si crees que esto es un error, contacta a un administrador.
       </p>
       <Link to="/app/inicio">
         <Button>Volver al inicio</Button>

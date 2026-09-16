@@ -6,8 +6,8 @@ import styles from "./DashboardPage.module.css";
 
 const COPY: Record<string, { headline: string; body: string }> = {
   mentee: {
-    headline: "Tu mentora está a un mensaje de distancia.",
-    body: "Continúa la conversación con tu mentora asignada, revisa el historial de acompañamiento y mantente al tanto de sus mensajes.",
+    headline: "Tu mentor está a un mensaje de distancia.",
+    body: "Continúa la conversación con tu mentor asignado, revisa el historial de acompañamiento y mantente al tanto de sus mensajes.",
   },
   mentor: {
     headline: "Gracias por acompañar a la próxima generación de ingenieras.",
@@ -15,7 +15,7 @@ const COPY: Record<string, { headline: string; body: string }> = {
   },
   admin: {
     headline: "Panel de administración del núcleo de RADIA.",
-    body: "Gestiona usuarias, roles y supervisa el estado general de la plataforma.",
+    body: "Gestiona usuarios, roles y supervisa el estado general de la plataforma.",
   },
 };
 
@@ -50,8 +50,8 @@ export default function DashboardPage() {
           <>
             <Link to="/app/usuarias" className={styles.card}>
               <Users size={20} />
-              <h3>Usuarias y roles</h3>
-              <p>Consulta el listado de mentees y mentoras, y gestiona la asignación de roles.</p>
+              <h3>Usuarios y roles</h3>
+              <p>Consulta el listado de mentees y mentores, y gestiona la asignación de roles.</p>
             </Link>
             <Link to="/app/permisos" className={styles.card}>
               <ShieldCheck size={20} />
