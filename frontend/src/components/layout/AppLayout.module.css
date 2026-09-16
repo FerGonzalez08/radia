@@ -1,8 +1,5 @@
 .shell {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
-  grid-template-rows: 1fr;
   background: var(--color-bg);
 }
 
@@ -10,16 +7,20 @@
   display: none;
 }
 
+/* Barra lateral estática: fija a la ventana (no al contenido), para que
+   nunca se desplace al hacer scroll en secciones largas. */
 .sidebar {
-  grid-row: 1;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
   background: var(--radia-dark);
   color: var(--color-text-on-dark);
   display: flex;
   flex-direction: column;
   padding: var(--space-6) var(--space-4);
-  position: sticky;
-  top: 0;
-  height: 100vh;
+  z-index: 20;
 }
 
 .sidebarHeader {
@@ -130,6 +131,8 @@
 .content {
   min-width: 0;
   overflow-x: hidden;
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
 }
 
 .backdrop {
@@ -137,9 +140,9 @@
 }
 
 @media (max-width: 767px) {
-  .shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: var(--topbar-height) 1fr;
+  .content {
+    margin-left: 0;
+    padding-top: var(--topbar-height);
   }
 
   .topbar {
@@ -149,8 +152,10 @@
     padding: 0 var(--space-4);
     height: var(--topbar-height);
     background: var(--radia-dark);
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 30;
   }
 
@@ -193,4 +198,28 @@
   .sidebarOpen {
     transform: translateX(0);
   }
+}
+
+/* Secciones futuras (Chatbot IA, Foro, Cursos): visibles pero no navegables. */
+.navItemDisabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  justify-content: space-between;
+}
+
+.navItemDisabled:hover {
+  background: transparent;
+  color: var(--color-text-on-dark-muted);
+}
+
+.comingSoon {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--color-text-on-dark-muted);
+  flex-shrink: 0;
 }

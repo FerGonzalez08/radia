@@ -1,16 +1,35 @@
 .page {
   min-height: 100%;
   background: var(--color-bg);
+  padding-top: var(--landing-nav-height, 76px);
 }
 
-/* ---- Nav ---- */
+/* ---- Nav: barra superior fija, no se mueve con el scroll ---- */
 .nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--landing-nav-height, 76px);
+  z-index: 40;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.navInner {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 100%;
   max-width: 1080px;
   margin: 0 auto;
-  padding: var(--space-6) var(--space-8);
+  padding: 0 var(--space-8);
+}
+
+.navLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
 }
 
 .navActions {
@@ -268,8 +287,8 @@
 }
 
 @media (max-width: 640px) {
-  .nav {
-    padding: var(--space-5) var(--space-4);
+  .navInner {
+    padding: 0 var(--space-4);
   }
   .hero {
     padding: var(--space-10) var(--space-4) var(--space-8);
@@ -284,4 +303,133 @@
     margin: 0 var(--space-4) var(--space-10);
     padding: var(--space-8);
   }
+}
+
+/* ---- Menú: panel lateral izquierdo a pantalla completa (vista previa del
+   alcance completo de RADIA, incluye módulos futuros) ---- */
+.menuButton {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.menuButton:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.menuBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 14, 0.45);
+  z-index: 45;
+}
+
+.menuPanel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: min(86vw, 320px);
+  background: var(--radia-dark);
+  box-shadow: var(--shadow-lg);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5) var(--space-4);
+}
+
+.menuHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-6);
+}
+
+.menuClose {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+}
+.menuClose:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.menuList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-on-dark, #fff);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+.menuItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.menuItemDisabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  justify-content: space-between;
+}
+.menuItemDisabled:hover {
+  background: transparent;
+}
+
+.menuBadge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--color-text-on-dark-muted, rgba(255, 255, 255, 0.6));
+  flex-shrink: 0;
+}
+
+.menuFooter {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.menuCta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--radia-gradient);
+  color: #fff;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 700;
 }

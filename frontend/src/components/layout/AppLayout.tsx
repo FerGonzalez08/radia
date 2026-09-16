@@ -78,6 +78,22 @@ export function AppLayout() {
           <ul>
             {menu.map((item) => {
               const Icon = item.icon;
+
+              // Módulos futuros (HU futuras, fuera del núcleo de esta entrega):
+              // se muestran para dar visibilidad del alcance completo de RADIA,
+              // pero todavía no navegan a ningún microservicio real.
+              if (item.disabled) {
+                return (
+                  <li key={item.path}>
+                    <span className={[styles.navItem, styles.navItemDisabled].join(" ")} aria-disabled="true">
+                      <Icon size={18} />
+                      <span>{item.label}</span>
+                      <span className={styles.comingSoon}>Pronto</span>
+                    </span>
+                  </li>
+                );
+              }
+
               const prefixes = item.matchPrefixes ?? [item.path];
               const active = prefixes.some((p) => location.pathname.startsWith(p));
               return (
