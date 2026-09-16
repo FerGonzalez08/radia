@@ -1,0 +1,92 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  position: absolute;
+  left: 13px;
+  display: flex;
+  color: var(--color-text-faint);
+  pointer-events: none;
+}
+
+.input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 14.5px;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input::placeholder {
+  color: var(--color-text-faint);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: var(--shadow-glow);
+}
+
+.withIcon {
+  padding-left: 38px;
+}
+
+.withTrailing {
+  padding-right: 40px;
+}
+
+.trailingBtn {
+  position: absolute;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-faint);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.trailingBtn:hover {
+  background: var(--color-bg-alt);
+  color: var(--color-text-muted);
+}
+
+.hasError .input {
+  border-color: var(--color-danger);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-danger);
+}
+
+.hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-text-faint);
+}
