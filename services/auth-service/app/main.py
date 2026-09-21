@@ -3,7 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routers import auth
+from app.routers import auth, internal
+
+
 
 # Crea las tablas si no existen. Válido para desarrollo local;
 # en producción esto se reemplaza por migraciones de Alembic.
@@ -20,6 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(internal.router)
 
 
 @app.get("/health")

@@ -32,5 +32,41 @@ services:
     volumes:
       - ./services/auth-service/app:/app/app
 
+  role-db:
+    image: postgres:16-alpine
+    container_name: radia-role-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: role_user
+      POSTGRES_PASSWORD: role_pass
+      POSTGRES_DB: role_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - role_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U role_user -d role_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  role-service:
+    build:
+      context: ./services/role-service
+    container_name: radia-role-service
+    restart: unless-stopped
+    env_file:
+      - ./services/role-service/.env
+    ports:
+      - "8002:8000"
+    depends_on:
+      role-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    volumes:
+      - ./services/role-service/app:/app/app
+
 volumes:
   auth_db_data:
+  role_db_data:

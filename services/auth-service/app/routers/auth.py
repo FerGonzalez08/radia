@@ -293,38 +293,5 @@ def confirm_password_reset(payload: PasswordResetConfirm, db: Session = Depends(
     db.commit()
     return None
 
-@router.get("/admin/users", response_model=list[UserOut])
-def list_users(
-    db: Session = Depends(get_db),
-    _admin: User = Depends(require_admin),
-):
-    return db.query(User).order_by(User.created_at.desc()).all()
 
 
-@router.patch("/admin/users/{user_id}/role", response_model=UserOut)
-def update_user_role(
-    user_id: uuid.UUID,
-    payload: RoleUpdateRequest,
-    db: Session = Depends(get_db),
-    _admin: User = Depends(require_admin),
-):
-    target_user = db.query(User).filter(User.id == user_id).first()
-    if target_user is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
-
-    if target_user.role_id == ADMIN_ROLE_ID:
-        raise HTTPException(status.HTTP_409_CONFLICT, "No se puede reasignar el rol de un administrador")
-
-    was_mentor = target_user.role_id == MENTOR_ROLE_ID
-    target_user.role_id = payload.role_id
-    db.commit()
-    db.refresh(target_user)
-
-    if was_mentor and payload.role_id != MENTOR_ROLE_ID:
-        # TODO: notificar a Navigation Service para cancelar mentorías activas
-        # de este usuario. Pendiente de definir: llamada síncrona vs evento
-        # asíncrono (ver decisión arquitectónica en RQF-008). No implementado
-        # porque Navigation Service no existe todavía.
-        pass
-
-    return target_user
