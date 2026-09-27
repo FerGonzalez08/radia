@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.core.database import Base, SessionLocal, engine
 from app.models import availability_slot, category, mentor_category, mentor_settings, mentorship  # noqa: F401
 from app.models.category import Category
-from app.routers import categories
+from app.routers import availability, categories
 
 Base.metadata.create_all(bind=engine)
 
@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 app.include_router(categories.router)
-
+app.include_router(availability.router)
 
 @app.on_event("startup")
 def seed_categories():
