@@ -24,3 +24,7 @@ async def list_users_internal() -> list[dict]:
     if response.status_code != 200:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Auth Service unavailable")
     return response.json()
+
+async def get_user(user_id: str) -> dict | None:
+    users = await list_users_internal()
+    return next((u for u in users if u["id"] == user_id), None)
