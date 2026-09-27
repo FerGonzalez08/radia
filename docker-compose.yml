@@ -67,6 +67,42 @@ services:
     volumes:
       - ./services/role-service/app:/app/app
 
+  navigation-db:
+    image: postgres:16-alpine
+    container_name: radia-navigation-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nav_user
+      POSTGRES_PASSWORD: nav_pass
+      POSTGRES_DB: navigation_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - navigation_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nav_user -d navigation_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  navigation-service:
+    build:
+      context: ./services/navigation-service
+    container_name: radia-navigation-service
+    restart: unless-stopped
+    env_file:
+      - ./services/navigation-service/.env
+    ports:
+      - "8003:8000"
+    depends_on:
+      navigation-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    volumes:
+      - ./services/navigation-service/app:/app/app
+
 volumes:
   auth_db_data:
   role_db_data:
+  navigation_db_data:
