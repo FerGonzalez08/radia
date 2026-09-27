@@ -75,18 +75,19 @@ async def chat_websocket(websocket: WebSocket, other_user_id: uuid.UUID, token: 
     except WebSocketDisconnect:
         pass
     finally:
-        manager.disconnect(my_id_str)
+        was_last_session = manager.disconnect(my_id_str, websocket)
 
-        existing = db.query(LastSeen).filter(LastSeen.user_id == my_id).first()
-        now = datetime.now(timezone.utc)
-        if existing is None:
-            db.add(LastSeen(user_id=my_id, last_seen_at=now))
-        else:
-            existing.last_seen_at = now
-        db.commit()
+        if was_last_session:
+            existing = db.query(LastSeen).filter(LastSeen.user_id == my_id).first()
+            now = datetime.now(timezone.utc)
+            if existing is None:
+                db.add(LastSeen(user_id=my_id, last_seen_at=now))
+            else:
+                existing.last_seen_at = now
+            db.commit()
 
-        await manager.send_to(str(other_user_id), {
-            "type": "presence", "user_id": my_id_str, "online": False, "last_seen_at": now.isoformat(),
-        })
+            await manager.send_to(str(other_user_id), {
+                "type": "presence", "user_id": my_id_str, "online": False, "last_seen_at": now.isoformat(),
+            })
 
         db.close()
