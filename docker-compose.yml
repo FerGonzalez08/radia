@@ -101,8 +101,46 @@ services:
         condition: service_started
     volumes:
       - ./services/navigation-service/app:/app/app
+    
+  chat-db:
+    image: postgres:16-alpine
+    container_name: radia-chat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: chat_user
+      POSTGRES_PASSWORD: chat_pass
+      POSTGRES_DB: chat_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - chat_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat_user -d chat_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  chat-service:
+    build:
+      context: ./services/chat-service
+    container_name: radia-chat-service
+    restart: unless-stopped
+    env_file:
+      - ./services/chat-service/.env
+    ports:
+      - "8004:8000"
+    depends_on:
+      chat-db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      navigation-service:
+        condition: service_started
+    volumes:
+      - ./services/chat-service/app:/app/app
 
 volumes:
   auth_db_data:
   role_db_data:
   navigation_db_data:
+  chat_db_data:
