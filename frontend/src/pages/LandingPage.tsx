@@ -271,7 +271,7 @@ export default function LandingPage() {
 
       <footer className={styles.footer}>
         <Logo variant="full-white" height={18} />
-        <p>Trabajo de Grado . Ingenieria de Sistemas y Computacion . Universidad Catolica de Colombia</p>
+        <p>© 2026 RADIA. Todos los derechos reservados.</p>
       </footer>
     </div>
   );

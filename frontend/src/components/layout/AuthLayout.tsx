@@ -39,7 +39,7 @@ export function AuthLayout({ children, title, subtitle, eyebrow, footer }: AuthL
           </ul>
         </div>
 
-        <p className={styles.brandFoot}>Trabajo de Grado · Ingeniería de Sistemas y Computación</p>
+        <p className={styles.brandFoot}>© 2026 RADIA. Todos los derechos reservados.</p>
       </aside>
 
       <main className={styles.formPanel}>
