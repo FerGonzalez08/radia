@@ -86,6 +86,7 @@
 }
 
 .hero {
+  position: relative;
   max-width: 1180px;
   margin: 0 auto;
   padding: var(--space-24) var(--space-8) var(--space-20);
@@ -93,9 +94,44 @@
   grid-template-columns: 1.1fr 0.9fr;
   gap: var(--space-16);
   align-items: center;
+  overflow: hidden;
+}
+
+/* Glow decorativo: blobs difuminados en el degradado de marca, con drift
+   lento continuo -- da movimiento ambiental constante sin distraer del
+   contenido (que queda siempre por encima, z-index 1). */
+.heroGlow {
+  position: absolute;
+  inset: -15% -10%;
+  background-image: url("../assets/mesh-glow.svg");
+  background-repeat: no-repeat;
+  background-size: 115% auto;
+  background-position: center;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+  animation: radia-drift 28s ease-in-out infinite;
+}
+
+@keyframes radia-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-2.5%, 2%) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroGlow,
+  .closingGlow {
+    animation: none;
+  }
 }
 
 .heroCopy {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -183,6 +219,8 @@
 }
 
 .heroVisual {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: center;
 }
@@ -298,9 +336,16 @@
   flex: 1;
   padding: var(--space-6) var(--space-6);
   text-align: left;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 .statRow + .statRow {
   border-left: var(--border-width) solid rgba(255, 255, 255, 0.14);
+}
+.statRowIn {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .statValue {
@@ -343,10 +388,16 @@
   gap: var(--space-6);
   padding: var(--space-6) 0;
   border-bottom: var(--border-width) solid rgba(255, 255, 255, 0.12);
-  transition: background var(--transition-fast);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: background var(--transition-fast), opacity 0.5s ease, transform 0.5s ease;
 }
 .listRow:hover {
   background: rgba(255, 255, 255, 0.025);
+}
+.listRowIn {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .listCode {
@@ -386,18 +437,37 @@
 }
 
 .closing {
+  position: relative;
   width: 100%;
   padding: var(--space-20) var(--space-8);
   background: var(--radia-gradient);
+  overflow: hidden;
+}
+
+/* Red de nodos conectados -- motivo de "mentoria en red" sobre el bloque
+   de mayor impacto de marca de la pagina. */
+.closingGlow {
+  position: absolute;
+  inset: 0;
+  background-image: url("../assets/network-nodes.svg");
+  background-repeat: repeat;
+  background-size: 620px 460px;
+  opacity: 0.4;
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .closing h2 {
+  position: relative;
+  z-index: 1;
   color: #fff;
   font-size: var(--text-display-lg);
   max-width: 520px;
 }
 
 .closingRule {
+  position: relative;
+  z-index: 1;
   width: 56px;
   height: 3px;
   margin: var(--space-6) 0;
@@ -405,12 +475,16 @@
 }
 
 .closing p {
+  position: relative;
+  z-index: 1;
   color: rgba(255, 255, 255, 0.85);
   max-width: 440px;
   margin: 0 0 var(--space-8);
 }
 
 .closing .primaryCta {
+  position: relative;
+  z-index: 1;
   background: #fff;
   color: var(--radia-mid-48);
 }

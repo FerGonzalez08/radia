@@ -16,7 +16,7 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className={styles.page}>
+    <div className={[styles.page, "fade-in"].join(" ")}>
       <PageHeader title="Mi perfil" subtitle="Información de tu cuenta en RADIA." />
 
       <div className={styles.card}>

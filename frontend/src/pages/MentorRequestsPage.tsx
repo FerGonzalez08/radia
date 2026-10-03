@@ -96,7 +96,7 @@ export default function MentorRequestsPage() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={[styles.page, "fade-in"].join(" ")}>
       <PageHeader title="Solicitudes" subtitle="Mentorías pendientes de tu respuesta e historial de mentorías." />
 
       {error && <Banner tone="danger">{error}</Banner>}

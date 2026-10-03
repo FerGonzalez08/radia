@@ -9,6 +9,7 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   padding: var(--space-6);
+  animation: radia-rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .identity {
@@ -50,7 +51,12 @@
   align-items: center;
   gap: 12px;
   color: var(--color-primary-strong);
+  animation: radia-rise-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+.field:nth-child(1) { animation-delay: 80ms; }
+.field:nth-child(2) { animation-delay: 130ms; }
+.field:nth-child(3) { animation-delay: 180ms; }
+.field:nth-child(4) { animation-delay: 230ms; }
 
 .fieldLabel {
   font-size: 12px;

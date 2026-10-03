@@ -50,12 +50,13 @@
   text-decoration: none;
   font-size: 14px;
   font-weight: 700;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
 
 .navItem:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
+  transform: translateX(2px);
 }
 
 .navItemActive {

@@ -25,11 +25,18 @@
   font-weight: 600;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: border-color var(--transition-fast), color var(--transition-fast);
+  transition: border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  animation: radia-rise-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .categoryPill:hover {
   border-color: var(--radia-mid-48);
+  transform: translateY(-1px);
 }
+.categoryPill:nth-child(1) { animation-delay: 0ms; }
+.categoryPill:nth-child(2) { animation-delay: 40ms; }
+.categoryPill:nth-child(3) { animation-delay: 80ms; }
+.categoryPill:nth-child(4) { animation-delay: 120ms; }
+.categoryPill:nth-child(n+5) { animation-delay: 160ms; }
 
 .categoryPillActive {
   background: var(--radia-gradient);
@@ -58,7 +65,17 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   overflow: hidden;
+  transition: border-color var(--transition-fast);
+  animation: radia-rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+.mentorCard:hover {
+  border-color: var(--radia-mid-48);
+}
+.mentorCard:nth-child(1) { animation-delay: 0ms; }
+.mentorCard:nth-child(2) { animation-delay: 70ms; }
+.mentorCard:nth-child(3) { animation-delay: 140ms; }
+.mentorCard:nth-child(4) { animation-delay: 210ms; }
+.mentorCard:nth-child(n+5) { animation-delay: 280ms; }
 
 .mentorHeader {
   width: 100%;
@@ -131,7 +148,12 @@
   border-radius: var(--radius-md);
   background: var(--color-bg-alt);
   font-size: 13px;
+  animation: radia-rise-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+.slotItem:nth-child(1) { animation-delay: 0ms; }
+.slotItem:nth-child(2) { animation-delay: 40ms; }
+.slotItem:nth-child(3) { animation-delay: 80ms; }
+.slotItem:nth-child(n+4) { animation-delay: 120ms; }
 
 .slotWhen {
   display: flex;

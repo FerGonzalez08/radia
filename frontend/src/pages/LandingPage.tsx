@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Home, LogIn, Menu, Sparkles, UserPlus, X } from "lucide-react";
 import { Logo } from "../components/ui/Logo";
+import { RevealSection } from "../components/ui/RevealSection";
+import { AnimatedNumber } from "../components/ui/AnimatedNumber";
 import styles from "./LandingPage.module.css";
 
 // Chatbot IA (microservicio futuro) sigue anunciado aqui porque ya tiene
@@ -30,14 +32,16 @@ const FEATURES = [
     code: "F4",
     eyebrow: "Proximamente",
     title: "Chatbot IA",
-    body: "Un asistente conversacional que se integrara como microservicio a RADIA para resolver dudas y acompanar tu experiencia.",
+    body: "Un asistente conversacional que pronto estara disponible en RADIA para resolver dudas y acompanar tu experiencia.",
   },
 ];
 
+// Valores numericos puros + formato, para poder animar el conteo cuando la
+// seccion entra en el viewport (antes eran strings fijos).
 const STATS = [
-  { value: "4", label: "microservicios en produccion" },
-  { value: "100%", label: "verificacion por correo" },
-  { value: "< 1.5s", label: "entrega de mensajes p95" },
+  { value: 300, format: (n: number) => `${Math.round(n)}+`, label: "mentees conectadas" },
+  { value: 60, format: (n: number) => `${Math.round(n)}+`, label: "mentoras acompañando" },
+  { value: 1000, format: (n: number) => `${Math.round(n).toLocaleString("es-CO")}+`, label: "mensajes enviados" },
 ];
 
 const STEPS = [
@@ -126,109 +130,143 @@ export default function LandingPage() {
       )}
 
       <main>
-        <section className={styles.hero}>
-          <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>
-              <Sparkles size={13} /> Women Tech UCatolica
-            </p>
-            <h1 className={styles.heroTitle}>
-              De buscar una mentora <span className={styles.accentText}>a tener una conversacion.</span>
-            </h1>
-            <hr className={styles.heroRule} />
-            <p className={styles.heroSubtitle}>
-              RADIA conecta mentees con mentoras que ya recorrieron el camino en ingenieria: busqueda por
-              categorias, agendamiento de disponibilidad real y conversacion en tiempo real, en una sola
-              plataforma.
-            </p>
-            <div className={styles.heroActions}>
+        <RevealSection className={styles.hero}>
+          {() => (
+            <>
+              <div className={styles.heroGlow} aria-hidden="true" />
+              <div className={styles.heroCopy}>
+                <p className={styles.eyebrow}>
+                  <Sparkles size={13} /> Women Tech UCatolica
+                </p>
+                <h1 className={styles.heroTitle}>
+                  De buscar una mentora <span className={styles.accentText}>a tener una conversacion.</span>
+                </h1>
+                <hr className={styles.heroRule} />
+                <p className={styles.heroSubtitle}>
+                  RADIA conecta mentees con mentoras que ya recorrieron el camino en ingenieria: busqueda por
+                  categorias, agendamiento de disponibilidad real y conversacion en tiempo real, en una sola
+                  plataforma.
+                </p>
+                <div className={styles.heroActions}>
+                  <Link to="/registro" className={styles.primaryCta}>
+                    Crear cuenta gratis <ArrowRight size={16} />
+                  </Link>
+                  <Link to="/iniciar-sesion" className={styles.textLink}>
+                    Ya tengo cuenta
+                  </Link>
+                </div>
+              </div>
+
+              <div className={styles.heroVisual} aria-hidden="true">
+                <div className={styles.mockCard}>
+                  <div className={styles.mockCardHeader}>
+                    <span className={styles.mockDot} />
+                    <span className={styles.mockDot} />
+                    <span className={styles.mockDot} />
+                    <span className={styles.mockCardTitle}>Chat RADIA</span>
+                  </div>
+                  <div className={styles.mockChat}>
+                    <div className={[styles.mockBubble, styles.mockBubbleIn].join(" ")}>
+                      Hola! Vi tu perfil, en que semestre vas?
+                    </div>
+                    <div className={[styles.mockBubble, styles.mockBubbleOut].join(" ")}>
+                      7 de Ing. de Sistemas, quiero reforzar bases de datos
+                    </div>
+                    <div className={styles.mockTyping}>
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </RevealSection>
+
+        <RevealSection className={styles.stats}>
+          {(visible) => (
+            <div className={styles.statsBox}>
+              {STATS.map((s, i) => (
+                <div
+                  className={[styles.statRow, visible ? styles.statRowIn : ""].join(" ")}
+                  key={s.label}
+                  style={{ transitionDelay: `${i * 90}ms` }}
+                >
+                  <p className={styles.statValue}>
+                    <AnimatedNumber value={s.value} active={visible} format={s.format} />
+                  </p>
+                  <p className={styles.statLabel}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </RevealSection>
+
+        <RevealSection className={styles.features} id="caracteristicas">
+          {(visible) => (
+            <>
+              <p className={styles.eyebrow}>Que incluye RADIA</p>
+              <h2 className={styles.sectionTitle}>
+                Todo lo que necesitas <span className={styles.accentText}>para empezar tu mentoria.</span>
+              </h2>
+              <div className={styles.list}>
+                {FEATURES.map((f, i) => (
+                  <div
+                    className={[styles.listRow, visible ? styles.listRowIn : ""].join(" ")}
+                    style={{ transitionDelay: `${i * 70}ms` }}
+                    key={f.code}
+                  >
+                    <span className={styles.listCode}>{f.code}</span>
+                    <div className={styles.listBody}>
+                      <p className={styles.listEyebrow}>{f.eyebrow}</p>
+                      <h3>{f.title}</h3>
+                      <p className={styles.listText}>{f.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </RevealSection>
+
+        <RevealSection className={styles.steps} id="como-funciona">
+          {(visible) => (
+            <>
+              <p className={styles.eyebrow}>Como funciona</p>
+              <h2 className={styles.sectionTitle}>Empezar toma menos de cinco minutos.</h2>
+              <div className={styles.list}>
+                {STEPS.map((s, i) => (
+                  <div
+                    className={[styles.listRow, visible ? styles.listRowIn : ""].join(" ")}
+                    style={{ transitionDelay: `${i * 70}ms` }}
+                    key={s.n}
+                  >
+                    <span className={styles.listCode}>{s.n}</span>
+                    <div className={styles.listBody}>
+                      <h3>{s.title}</h3>
+                      <p className={styles.listText}>{s.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </RevealSection>
+
+        <RevealSection className={styles.closing}>
+          {() => (
+            <>
+              <div className={styles.closingGlow} aria-hidden="true" />
+              <h2>Todo listo para empezar?</h2>
+              <div className={styles.closingRule} />
+              <p>Unete a la comunidad RADIA y da el siguiente paso en tu camino en ingenieria.</p>
               <Link to="/registro" className={styles.primaryCta}>
                 Crear cuenta gratis <ArrowRight size={16} />
               </Link>
-              <Link to="/iniciar-sesion" className={styles.textLink}>
-                Ya tengo cuenta
-              </Link>
-            </div>
-          </div>
-
-          <div className={styles.heroVisual} aria-hidden="true">
-            <div className={styles.mockCard}>
-              <div className={styles.mockCardHeader}>
-                <span className={styles.mockDot} />
-                <span className={styles.mockDot} />
-                <span className={styles.mockDot} />
-                <span className={styles.mockCardTitle}>Chat RADIA</span>
-              </div>
-              <div className={styles.mockChat}>
-                <div className={[styles.mockBubble, styles.mockBubbleIn].join(" ")}>
-                  Hola! Vi tu perfil, en que semestre vas?
-                </div>
-                <div className={[styles.mockBubble, styles.mockBubbleOut].join(" ")}>
-                  7 de Ing. de Sistemas, quiero reforzar bases de datos
-                </div>
-                <div className={styles.mockTyping}>
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.stats}>
-          <div className={styles.statsBox}>
-            {STATS.map((s) => (
-              <div className={styles.statRow} key={s.label}>
-                <p className={styles.statValue}>{s.value}</p>
-                <p className={styles.statLabel}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.features} id="caracteristicas">
-          <p className={styles.eyebrow}>Que incluye RADIA</p>
-          <h2 className={styles.sectionTitle}>
-            Todo lo que necesitas <span className={styles.accentText}>para empezar tu mentoria.</span>
-          </h2>
-          <div className={styles.list}>
-            {FEATURES.map((f) => (
-              <div className={styles.listRow} key={f.code}>
-                <span className={styles.listCode}>{f.code}</span>
-                <div className={styles.listBody}>
-                  <p className={styles.listEyebrow}>{f.eyebrow}</p>
-                  <h3>{f.title}</h3>
-                  <p className={styles.listText}>{f.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.steps} id="como-funciona">
-          <p className={styles.eyebrow}>Como funciona</p>
-          <h2 className={styles.sectionTitle}>Empezar toma menos de cinco minutos.</h2>
-          <div className={styles.list}>
-            {STEPS.map((s) => (
-              <div className={styles.listRow} key={s.n}>
-                <span className={styles.listCode}>{s.n}</span>
-                <div className={styles.listBody}>
-                  <h3>{s.title}</h3>
-                  <p className={styles.listText}>{s.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.closing}>
-          <h2>Todo listo para empezar?</h2>
-          <div className={styles.closingRule} />
-          <p>Unete a la comunidad RADIA y da el siguiente paso en tu camino en ingenieria.</p>
-          <Link to="/registro" className={styles.primaryCta}>
-            Crear cuenta gratis <ArrowRight size={16} />
-          </Link>
-        </section>
+            </>
+          )}
+        </RevealSection>
       </main>
 
       <footer className={styles.footer}>

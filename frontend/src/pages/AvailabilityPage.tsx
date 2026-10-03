@@ -147,7 +147,7 @@ export default function AvailabilityPage() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={[styles.page, "fade-in"].join(" ")}>
       <PageHeader
         title="Mi disponibilidad"
         subtitle="Categorías en las que ofreces mentoría, tus bloques de horario y la aceptación automática de solicitudes."

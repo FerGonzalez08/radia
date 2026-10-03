@@ -75,7 +75,7 @@ export default function MyMentorshipsPage() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={[styles.page, "fade-in"].join(" ")}>
       <PageHeader title="Mis mentorías" subtitle="Solicitudes enviadas y mentorías confirmadas con tus mentoras." />
 
       {error && <Banner tone="danger">{error}</Banner>}

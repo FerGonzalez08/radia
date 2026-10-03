@@ -25,8 +25,8 @@ export function AiChatBubble() {
               <Sparkles size={22} />
             </span>
             <p className={styles.panelText}>
-              El asistente conversacional de RADIA se integrará como un microservicio propio — todavía no está
-              disponible.
+              El asistente conversacional de RADIA todavía no está disponible — muy pronto vas a poder resolver
+              tus dudas por aquí.
             </p>
             <span className={styles.panelBadge}>Próximamente</span>
           </div>

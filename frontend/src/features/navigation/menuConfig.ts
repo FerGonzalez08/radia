@@ -62,7 +62,7 @@ const MENUS: Record<Role, MenuItem[]> = {
     { path: "/app/usuarias", label: "Usuarios y roles", icon: Users },
     { path: "/app/categorias", label: "Categorías", icon: Tag },
     { path: "/app/chat", label: "Chat", icon: MessagesSquare, matchPrefixes: ["/app/chat"] },
-    { path: "/app/permisos", label: "Matriz de permisos", icon: ShieldCheck },
+    { path: "/app/permisos", label: "Permisos por rol", icon: ShieldCheck },
     { path: "/app/perfil", label: "Mi perfil", icon: User },
     ...UPCOMING_ITEMS,
   ],

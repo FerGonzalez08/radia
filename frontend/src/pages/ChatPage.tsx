@@ -16,7 +16,7 @@ function ChatPageInner() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={[styles.page, "fade-in"].join(" ")}>
       <div className={[styles.sidebar, mobileShowWindow ? styles.sidebarHiddenMobile : ""].join(" ")}>
         <div className={styles.sidebarHeader}>
           <h1>Chat</h1>

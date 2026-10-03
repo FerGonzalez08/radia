@@ -82,9 +82,16 @@
   flex: 1;
   padding: var(--space-5) var(--space-5);
   text-align: left;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 .statRow + .statRow {
   border-left: var(--border-width) solid var(--color-border);
+}
+.statRowIn {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .statValue {
@@ -115,13 +122,19 @@
   border-bottom: var(--border-width) solid var(--color-border);
   text-decoration: none;
   color: var(--color-text);
-  transition: background var(--transition-fast);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: background var(--transition-fast), opacity 0.5s ease, transform 0.5s ease;
 }
 .listRow:hover {
   background: var(--color-bg-alt);
 }
 .listRow:hover .listArrow {
   transform: translateX(3px);
+}
+.listRowIn {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .listIcon {

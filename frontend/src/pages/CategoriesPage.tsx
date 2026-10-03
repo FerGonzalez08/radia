@@ -97,10 +97,10 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={[styles.page, "fade-in"].join(" ")}>
       <PageHeader
         title="Categorías de mentoría"
-        subtitle="Catálogo que usan las mentoras para publicar sus áreas y los mentees para buscar por categoría (navigation-service)."
+        subtitle="Catálogo que usan las mentoras para publicar sus áreas y los mentees para buscar por categoría."
       />
 
       {error && <Banner tone="danger">{error}</Banner>}

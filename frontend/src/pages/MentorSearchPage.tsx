@@ -103,10 +103,10 @@ export default function MentorSearchPage() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={[styles.page, "fade-in"].join(" ")}>
       <PageHeader
         title="Buscar mentor"
-        subtitle="Filtra por categoría, revisa la disponibilidad real de cada mentora y solicita un bloque (RQF-027/RQF-028)."
+        subtitle="Filtra por categoría, revisa la disponibilidad real de cada mentora y solicita un bloque."
       />
 
       {error && <Banner tone="danger">{error}</Banner>}

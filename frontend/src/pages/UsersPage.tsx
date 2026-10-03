@@ -85,10 +85,10 @@ export default function UsersPage() {
   });
 
   return (
-    <div className={styles.page}>
+    <div className={[styles.page, "fade-in"].join(" ")}>
       <PageHeader
         title="Usuarios y roles"
-        subtitle="Listado de usuarios registrados en RADIA (HU010) — promoción y reversión de roles (HU008), vía role-service."
+        subtitle="Consulta los usuarios registrados en RADIA y gestiona sus roles."
       />
 
       {error && <Banner tone="danger">{error}</Banner>}

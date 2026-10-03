@@ -19,10 +19,29 @@
   position: absolute;
   inset: 0;
   background-image:
+    url("../../assets/mesh-glow.svg"),
     linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 64px 64px;
+  background-repeat: no-repeat, repeat, repeat;
+  background-size: 140% auto, 64px 64px, 64px 64px;
+  background-position: -15% 10%, 0 0, 0 0;
   pointer-events: none;
+  animation: radia-drift 32s ease-in-out infinite;
+}
+
+@keyframes radia-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-2%, 1.5%) scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brandGlow {
+    animation: none;
+  }
 }
 
 .brandLogo {
