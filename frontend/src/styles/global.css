@@ -26,10 +26,10 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-weight: 700;
-  line-height: 1.15;
+  font-weight: var(--weight-display);
+  line-height: 1.08;
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-display);
 }
 
 p {
@@ -86,6 +86,29 @@ img {
 }
 
 .text-gradient {
+  background: var(--radia-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- Utilidades v2 "bold minimal": bloques de seccion a todo el ancho,
+   alternando superficie clara/oscura, y numeros grandes de paso/feature. ---- */
+.section-ink {
+  background: var(--radia-dark);
+  color: var(--color-text-on-dark);
+}
+
+.section-ink .eyebrow {
+  color: #e59bc0;
+}
+
+.big-number {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: clamp(2.4rem, 1.9rem + 2vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
   background: var(--radia-gradient-text);
   -webkit-background-clip: text;
   background-clip: text;

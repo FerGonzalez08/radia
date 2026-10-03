@@ -1,15 +1,21 @@
 /**
- * Design tokens de RADIA.
- * Colores extraídos directamente del Manual de Marca RADIA v1.0 (2026):
+ * Design tokens de RADIA -- v2 "Bold Minimal".
+ * Colores extraidos del Manual de Marca RADIA v1.0 (2026):
  * - Degradado oficial: #D1155B (0%) -> #B01B62 (22%) -> #9A2177 (48%) -> #872580 (68%) -> #682D90 (100%)
- * - Magenta plano: #C81E63 · Violeta plano: #6C3A9E · Negro: #111111
- * - Fondo oscuro de portada: #1A1420 · Fondo claro de contenido: #FBF9FC
+ * - Magenta plano: #C81E63 . Violeta plano: #6C3A9E . Negro: #111111
+ * - Fondo oscuro de portada: #1A1420 . Fondo claro de contenido: #FBF9FC
  * El degradado siempre corre de izquierda (magenta) a derecha (violeta), nunca vertical ni radial.
+ *
+ * v2: direccion visual mas "bold minimal" (tipografia grande y pesada,
+ * superficies planas con borde definido en vez de sombras suaves difusas,
+ * secciones de bloque alternando claro/oscuro) manteniendo intacta la
+ * paleta de marca -- nada de monocromo, el degradado sigue siendo la firma
+ * de RADIA.
  */
 :root {
   color-scheme: light;
 
-  /* ---- Marca: degradado y sólidos ---- */
+  /* ---- Marca: degradado y solidos ---- */
   --radia-magenta-start: #d1155b;
   --radia-magenta-22: #b01b62;
   --radia-mid-48: #9a2177;
@@ -68,20 +74,42 @@
   --color-online: #21b573;
   --color-offline: #9a93a3;
 
-  /* ---- Tipografía ---- */
-  --font-display: "Sora", "Inter", system-ui, sans-serif;
+  /* ---- Tipografia ---- */
+  /* v3: titulo de impacto editorial (condensado, negro solido) en vez de
+     la geometrica redondeada tipo "SaaS generico" -- es la diferencia que
+     mas se nota de un vistazo. Archivo Black solo trae el peso 400 (ya es
+     el maximo), por eso --weight-display baja a 400 en vez de 800. */
+  --font-display: "Archivo Black", "Sora", "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Space Mono", monospace;
 
+  --text-hero: clamp(2.6rem, 1.9rem + 3.4vw, 4.6rem);
+  --text-display-lg: clamp(2rem, 1.6rem + 1.8vw, 2.9rem);
+  --text-display-md: clamp(1.5rem, 1.3rem + 0.9vw, 1.9rem);
+  --weight-display: 400;
+  --tracking-display: -0.01em;
+
+  /* Acento solido para numeros/etiquetas/codigos -- en vez de pintar cada
+     chip o badge con el degradado completo (ese "todo en degradado" es
+     justo lo que lee como plantilla generica de IA). El degradado de
+     marca se reserva para 1-2 momentos: el CTA principal y una palabra
+     destacada por seccion. */
+  --radia-accent: var(--radia-magenta);
+
   /* ---- Radios / sombras / espaciado ---- */
   --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
   --radius-pill: 999px;
 
-  --shadow-sm: 0 1px 2px rgba(26, 15, 34, 0.06), 0 1px 1px rgba(26, 15, 34, 0.04);
-  --shadow-md: 0 8px 24px -8px rgba(76, 20, 82, 0.22);
-  --shadow-lg: 0 20px 48px -16px rgba(76, 20, 82, 0.32);
+  --border-width: 1.5px;
+  --border-width-bold: 2px;
+
+  /* v2: sombras mas planas y cortas; el borde define la superficie, la
+     sombra solo da una pista minima de elevacion en el hover. */
+  --shadow-sm: 0 1px 2px rgba(26, 15, 34, 0.05);
+  --shadow-md: 0 6px 16px -8px rgba(26, 15, 34, 0.22);
+  --shadow-lg: 0 16px 32px -12px rgba(26, 15, 34, 0.28);
   --shadow-glow: 0 0 0 4px rgba(154, 33, 119, 0.14);
 
   --space-1: 4px;
@@ -94,6 +122,8 @@
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
 
   --sidebar-width: 264px;
   --sidebar-width-collapsed: 84px;

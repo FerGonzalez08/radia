@@ -108,9 +108,10 @@ export default function DashboardPage() {
     <div className={styles.page}>
       <section className={styles.hero}>
         <p className={styles.eyebrow}>
-          <Sparkles size={14} /> {ROLE_LABEL[user.rol]}
+          <Sparkles size={13} /> {ROLE_LABEL[user.rol]}
         </p>
-        <h1>Hola, {firstName} 👋</h1>
+        <h1>Hola, {firstName}</h1>
+        <hr className={styles.heroRule} />
         <p className={styles.headline}>{copy.headline}</p>
         <p className={styles.body}>{copy.body}</p>
         <Link to={user.rol === "mentee" ? "/app/mentores" : "/app/chat"} className={styles.cta}>
@@ -119,14 +120,12 @@ export default function DashboardPage() {
       </section>
 
       {user.rol === "mentee" && menteeStats && (
-        <section className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <CalendarClock size={18} />
+        <section className={styles.statsBox}>
+          <div className={styles.statRow}>
             <p className={styles.statValue}>{menteeStats.confirmadas}</p>
             <p className={styles.statLabel}>Mentorías confirmadas</p>
           </div>
-          <div className={styles.statCard}>
-            <Inbox size={18} />
+          <div className={styles.statRow}>
             <p className={styles.statValue}>{menteeStats.pendientes}</p>
             <p className={styles.statLabel}>Solicitudes pendientes</p>
           </div>
@@ -134,24 +133,20 @@ export default function DashboardPage() {
       )}
 
       {user.rol === "mentor" && mentorStats && (
-        <section className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <Inbox size={18} />
+        <section className={styles.statsBox}>
+          <div className={styles.statRow}>
             <p className={styles.statValue}>{mentorStats.pendientes}</p>
             <p className={styles.statLabel}>Solicitudes pendientes</p>
           </div>
-          <div className={styles.statCard}>
-            <CalendarClock size={18} />
+          <div className={styles.statRow}>
             <p className={styles.statValue}>{mentorStats.confirmadas}</p>
             <p className={styles.statLabel}>Mentorías confirmadas</p>
           </div>
-          <div className={styles.statCard}>
-            <Sparkles size={18} />
+          <div className={styles.statRow}>
             <p className={styles.statValue}>{mentorStats.bloquesLibres}</p>
             <p className={styles.statLabel}>Bloques libres</p>
           </div>
-          <div className={styles.statCard}>
-            <ShieldCheck size={18} />
+          <div className={styles.statRow}>
             <p className={styles.statValue}>{mentorStats.autoAceptar ? "Sí" : "No"}</p>
             <p className={styles.statLabel}>Aceptación automática</p>
           </div>
@@ -159,78 +154,99 @@ export default function DashboardPage() {
       )}
 
       {user.rol === "admin" && adminStats && (
-        <section className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <Users size={18} />
+        <section className={styles.statsBox}>
+          <div className={styles.statRow}>
             <p className={styles.statValue}>{adminStats.usuarios}</p>
             <p className={styles.statLabel}>Usuarios registrados</p>
           </div>
-          <div className={styles.statCard}>
-            <ShieldCheck size={18} />
+          <div className={styles.statRow}>
             <p className={styles.statValue}>{adminStats.mentoras}</p>
             <p className={styles.statLabel}>Mentoras activas</p>
           </div>
-          <div className={styles.statCard}>
-            <Tag size={18} />
+          <div className={styles.statRow}>
             <p className={styles.statValue}>{adminStats.categorias}</p>
             <p className={styles.statLabel}>Categorías</p>
           </div>
         </section>
       )}
 
-      <section className={styles.grid}>
+      <section className={styles.list}>
         {user.rol === "mentee" && (
           <>
-            <Link to="/app/mentores" className={styles.card}>
-              <Users size={20} />
-              <h3>Buscar mentor</h3>
-              <p>Filtra por categoría, revisa disponibilidad real y solicita un bloque.</p>
+            <Link to="/app/mentores" className={styles.listRow}>
+              <Users size={18} className={styles.listIcon} />
+              <div className={styles.listBody}>
+                <h3>Buscar mentor</h3>
+                <p>Filtra por categoría, revisa disponibilidad real y solicita un bloque.</p>
+              </div>
+              <ArrowRight size={16} className={styles.listArrow} />
             </Link>
-            <Link to="/app/mis-mentorias" className={styles.card}>
-              <CalendarClock size={20} />
-              <h3>Mis mentorías</h3>
-              <p>Revisa el estado de tus solicitudes y mentorías confirmadas.</p>
+            <Link to="/app/mis-mentorias" className={styles.listRow}>
+              <CalendarClock size={18} className={styles.listIcon} />
+              <div className={styles.listBody}>
+                <h3>Mis mentorías</h3>
+                <p>Revisa el estado de tus solicitudes y mentorías confirmadas.</p>
+              </div>
+              <ArrowRight size={16} className={styles.listArrow} />
             </Link>
           </>
         )}
 
         {user.rol === "mentor" && (
           <>
-            <Link to="/app/solicitudes" className={styles.card}>
-              <Inbox size={20} />
-              <h3>Solicitudes</h3>
-              <p>Acepta o rechaza mentorías pendientes de tu respuesta.</p>
+            <Link to="/app/solicitudes" className={styles.listRow}>
+              <Inbox size={18} className={styles.listIcon} />
+              <div className={styles.listBody}>
+                <h3>Solicitudes</h3>
+                <p>Acepta o rechaza mentorías pendientes de tu respuesta.</p>
+              </div>
+              <ArrowRight size={16} className={styles.listArrow} />
             </Link>
-            <Link to="/app/disponibilidad" className={styles.card}>
-              <CalendarClock size={20} />
-              <h3>Mi disponibilidad</h3>
-              <p>Gestiona tus categorías, bloques de horario y aceptación automática.</p>
+            <Link to="/app/disponibilidad" className={styles.listRow}>
+              <CalendarClock size={18} className={styles.listIcon} />
+              <div className={styles.listBody}>
+                <h3>Mi disponibilidad</h3>
+                <p>Gestiona tus categorías, bloques de horario y aceptación automática.</p>
+              </div>
+              <ArrowRight size={16} className={styles.listArrow} />
             </Link>
           </>
         )}
 
-        <Link to="/app/chat" className={styles.card}>
-          <MessagesSquare size={20} />
-          <h3>Chat en tiempo real</h3>
-          <p>Mensajería instantánea con historial, presencia y confirmaciones de entrega.</p>
+        <Link to="/app/chat" className={styles.listRow}>
+          <MessagesSquare size={18} className={styles.listIcon} />
+          <div className={styles.listBody}>
+            <h3>Chat en tiempo real</h3>
+            <p>Mensajería instantánea con historial, presencia y confirmaciones de entrega.</p>
+          </div>
+          <ArrowRight size={16} className={styles.listArrow} />
         </Link>
 
         {user.rol === "admin" && (
           <>
-            <Link to="/app/usuarias" className={styles.card}>
-              <Users size={20} />
-              <h3>Usuarios y roles</h3>
-              <p>Consulta el listado de mentees y mentoras, y gestiona la asignación de roles.</p>
+            <Link to="/app/usuarias" className={styles.listRow}>
+              <Users size={18} className={styles.listIcon} />
+              <div className={styles.listBody}>
+                <h3>Usuarios y roles</h3>
+                <p>Consulta el listado de mentees y mentoras, y gestiona la asignación de roles.</p>
+              </div>
+              <ArrowRight size={16} className={styles.listArrow} />
             </Link>
-            <Link to="/app/categorias" className={styles.card}>
-              <Tag size={20} />
-              <h3>Categorías</h3>
-              <p>Administra el catálogo que usan mentoras y mentees para encontrarse.</p>
+            <Link to="/app/categorias" className={styles.listRow}>
+              <Tag size={18} className={styles.listIcon} />
+              <div className={styles.listBody}>
+                <h3>Categorías</h3>
+                <p>Administra el catálogo que usan mentoras y mentees para encontrarse.</p>
+              </div>
+              <ArrowRight size={16} className={styles.listArrow} />
             </Link>
-            <Link to="/app/permisos" className={styles.card}>
-              <ShieldCheck size={20} />
-              <h3>Matriz de permisos</h3>
-              <p>Documentación de los permisos habilitados para cada rol en cada endpoint.</p>
+            <Link to="/app/permisos" className={styles.listRow}>
+              <ShieldCheck size={18} className={styles.listIcon} />
+              <div className={styles.listBody}>
+                <h3>Matriz de permisos</h3>
+                <p>Documentación de los permisos habilitados para cada rol en cada endpoint.</p>
+              </div>
+              <ArrowRight size={16} className={styles.listArrow} />
             </Link>
           </>
         )}

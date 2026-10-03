@@ -1,3 +1,7 @@
+/* v3: mismo lenguaje editorial del landing -- todo alineado a la
+   izquierda, listas con divisores finos en vez de tarjetas con sombra o
+   iconos en circulo, acento solido para numeros/etiquetas pequenas. */
+
 .page {
   padding: var(--space-8) var(--space-8) var(--space-12);
   max-width: 1080px;
@@ -5,16 +9,14 @@
 }
 
 .hero {
-  position: relative;
-  border-radius: var(--radius-lg);
-  padding: var(--space-10);
-  background:
-    radial-gradient(600px 320px at 90% 0%, rgba(209, 21, 91, 0.16), transparent 60%),
-    radial-gradient(500px 320px at 0% 100%, rgba(104, 45, 144, 0.16), transparent 60%),
-    var(--color-surface);
-  border: 1px solid var(--color-border);
-  overflow: hidden;
+  padding-bottom: var(--space-8);
   margin-bottom: var(--space-8);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.hero h1 {
+  color: var(--color-text);
+  font-size: var(--text-display-md);
 }
 
 .eyebrow {
@@ -23,20 +25,24 @@
   gap: 6px;
   font-family: var(--font-mono);
   font-size: 12px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-primary-strong);
+  color: var(--radia-accent);
   margin-bottom: var(--space-3);
 }
 
-.hero h1 {
-  font-size: 30px;
-  margin-bottom: var(--space-3);
+.heroRule {
+  width: 48px;
+  height: 3px;
+  margin: var(--space-4) 0 var(--space-5);
+  border: none;
+  background: var(--radia-accent);
 }
 
 .headline {
-  font-size: 17px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
   margin-bottom: var(--space-2);
 }
 
@@ -50,95 +56,115 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 11px 20px;
-  border-radius: var(--radius-md);
+  padding: 12px 22px;
+  border-radius: var(--radius-sm);
   background: var(--radia-gradient);
   color: #fff;
   font-weight: 700;
   font-size: 14px;
   text-decoration: none;
-  box-shadow: var(--shadow-md);
-  transition: filter var(--transition-fast);
+  transition: filter var(--transition-fast), transform var(--transition-fast);
 }
 .cta:hover {
   filter: brightness(1.06);
+  transform: translateY(-1px);
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-5);
+/* ---- Stats: una sola caja con divisores internos finos ---- */
+.statsBox {
+  display: flex;
+  border-top: var(--border-width) solid var(--color-border);
+  border-bottom: var(--border-width) solid var(--color-border);
+  margin-bottom: var(--space-10);
 }
 
-.card {
+.statRow {
+  flex: 1;
+  padding: var(--space-5) var(--space-5);
+  text-align: left;
+}
+.statRow + .statRow {
+  border-left: var(--border-width) solid var(--color-border);
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: 26px;
+  color: var(--radia-accent);
+}
+
+.statLabel {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+/* ---- Accesos rapidos: lista con divisores finos, sin tarjetas ---- */
+.list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-2);
+  border-bottom: var(--border-width) solid var(--color-border);
   text-decoration: none;
   color: var(--color-text);
-  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: background var(--transition-fast);
+}
+.listRow:hover {
+  background: var(--color-bg-alt);
+}
+.listRow:hover .listArrow {
+  transform: translateX(3px);
 }
 
-.card svg {
-  color: var(--color-primary-strong);
+.listIcon {
+  flex-shrink: 0;
+  color: var(--radia-accent);
 }
 
-.card h3 {
+.listBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.listBody h3 {
   font-size: 15.5px;
+  margin-bottom: 2px;
 }
 
-.card p {
+.listBody p {
   font-size: 13.5px;
   color: var(--color-text-muted);
 }
 
-.card:hover {
-  border-color: var(--radia-mid-48);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+.listArrow {
+  flex-shrink: 0;
+  color: var(--color-text-faint);
+  transition: transform var(--transition-fast);
 }
 
 @media (max-width: 640px) {
   .page {
     padding: var(--space-5);
   }
-  .hero {
-    padding: var(--space-6);
+  .statsBox {
+    flex-direction: column;
   }
-}
-
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--space-4);
-  margin-bottom: var(--space-8);
-}
-
-.statCard {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-}
-
-.statCard svg {
-  color: var(--color-primary-strong);
-}
-
-.statValue {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 24px;
-}
-
-.statLabel {
-  font-size: 12.5px;
-  color: var(--color-text-muted);
+  .statRow + .statRow {
+    border-left: none;
+    border-top: var(--border-width) solid var(--color-border);
+  }
+  .listRow {
+    align-items: flex-start;
+  }
+  .listArrow {
+    display: none;
+  }
 }
