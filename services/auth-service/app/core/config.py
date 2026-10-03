@@ -18,8 +18,6 @@ class Settings(BaseSettings):
     RESEND_SENDER_EMAIL: str
     FRONTEND_URL: str
 
-    INTERNAL_SERVICE_KEY: str
-
 
 settings = Settings()
 import uuid

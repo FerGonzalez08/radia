@@ -1,0 +1,143 @@
+.page {
+  padding: var(--space-8);
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.section {
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  margin-bottom: var(--space-5);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  margin-bottom: var(--space-2);
+}
+
+.sectionHint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.categoryGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.categoryOption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+  cursor: pointer;
+}
+
+.saveBtn,
+.createBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--radia-gradient);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.saveBtn:disabled,
+.createBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.slotForm {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.input {
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg);
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.slotList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.slotItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-alt);
+  font-size: 13px;
+}
+
+.slotWhen {
+  flex: 1;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.slotStatus {
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+}
+.slotLibre {
+  background: var(--color-success-bg);
+  color: #0d6b48;
+}
+.slotReservado {
+  background: var(--color-info-bg);
+  color: #2c3aa8;
+}
+
+.deleteBtn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-text-faint);
+  cursor: pointer;
+}
+.deleteBtn:hover {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
