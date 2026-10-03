@@ -1,0 +1,102 @@
+.page {
+  padding: var(--space-8);
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-12) 0;
+  color: var(--color-text-faint);
+  text-align: center;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  transition: border-color var(--transition-fast);
+  animation: radia-rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.item:hover {
+  border-color: var(--radia-mid-48);
+}
+.item:nth-child(1) { animation-delay: 0ms; }
+.item:nth-child(2) { animation-delay: 60ms; }
+.item:nth-child(3) { animation-delay: 120ms; }
+.item:nth-child(4) { animation-delay: 180ms; }
+.item:nth-child(5) { animation-delay: 240ms; }
+.item:nth-child(n+6) { animation-delay: 300ms; }
+
+.mentorName {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.slotText {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.itemRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pendiente {
+  background: var(--color-warning-bg);
+  color: #855407;
+}
+.confirmada {
+  background: var(--color-success-bg);
+  color: #0d6b48;
+}
+.rechazada,
+.cancelada {
+  background: var(--color-danger-bg);
+  color: #a3123d;
+}
+
+.cancelBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 11px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cancelBtn:hover {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: transparent;
+}

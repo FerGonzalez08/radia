@@ -1,0 +1,198 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+}
+
+.brandPanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-10) var(--space-12);
+  background: var(--radia-dark);
+  color: var(--color-text-on-dark);
+  overflow: hidden;
+}
+
+.brandGlow {
+  position: absolute;
+  inset: 0;
+  background-image:
+    url("../../assets/mesh-glow.svg"),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-repeat: no-repeat, repeat, repeat;
+  background-size: 140% auto, 64px 64px, 64px 64px;
+  background-position: -15% 10%, 0 0, 0 0;
+  pointer-events: none;
+  animation: radia-drift 32s ease-in-out infinite;
+}
+
+@keyframes radia-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-2%, 1.5%) scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brandGlow {
+    animation: none;
+  }
+}
+
+.brandLogo {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+}
+
+.brandCopy {
+  position: relative;
+  z-index: 1;
+  max-width: 460px;
+}
+
+.brandKicker {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--radia-accent);
+  margin-bottom: var(--space-5);
+}
+
+.brandTitle {
+  font-size: var(--text-display-lg);
+  color: #fff;
+  margin-bottom: var(--space-8);
+}
+
+.brandList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-top: var(--border-width) solid rgba(255, 255, 255, 0.14);
+  padding-top: var(--space-6);
+}
+
+.brandList li {
+  position: relative;
+  padding-left: 24px;
+  font-size: 14.5px;
+  color: var(--color-text-on-dark-muted);
+  line-height: 1.5;
+}
+
+.brandList li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--radia-accent);
+}
+
+.brandFoot {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: rgba(246, 241, 250, 0.55);
+}
+
+.formPanel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  background: var(--color-bg);
+}
+
+.themeToggle {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.themeToggle:hover {
+  background: var(--color-bg-alt);
+  border-color: var(--color-border-strong);
+}
+
+.formCard {
+  width: 100%;
+  max-width: 420px;
+  animation: radia-fade-in var(--transition-base) both;
+}
+
+.mobileLogo {
+  display: none;
+  margin-bottom: var(--space-6);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-primary-strong);
+  margin-bottom: var(--space-2);
+}
+
+.title {
+  font-size: 28px;
+  margin-bottom: var(--space-2);
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: 14.5px;
+  margin-bottom: var(--space-6);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.footer {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: var(--border-width) solid var(--color-border);
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+@media (max-width: 920px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+  .brandPanel {
+    display: none;
+  }
+  .mobileLogo {
+    display: block;
+  }
+  .formPanel {
+    padding: var(--space-6) var(--space-4);
+  }
+}

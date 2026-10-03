@@ -1,0 +1,283 @@
+.shell {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.topbar {
+  display: none;
+}
+
+/* Barra lateral estatica: fija a la ventana (no al contenido), para que
+   nunca se desplace al hacer scroll en secciones largas. */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: var(--radia-dark);
+  color: var(--color-text-on-dark);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6) var(--space-4);
+  border-right: var(--border-width) solid rgba(255, 255, 255, 0.08);
+  z-index: 20;
+}
+
+.sidebarHeader {
+  padding: 0 var(--space-2) var(--space-10);
+}
+
+.nav {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px 11px 17px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-on-dark-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  transform: translateX(2px);
+}
+
+.navItemActive {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.navItemActive::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--radia-accent);
+}
+
+.sidebarFooter {
+  border-top: var(--border-width) solid rgba(255, 255, 255, 0.1);
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 var(--space-2);
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12.5px;
+  flex-shrink: 0;
+}
+
+.userMeta {
+  min-width: 0;
+}
+
+.userName {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-on-dark-muted);
+}
+
+.themeToggleFull {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: var(--border-width) solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: var(--color-text-on-dark-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+.themeToggleFull:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.themeToggle {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: var(--border-width) solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.themeToggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: var(--border-width) solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: var(--color-text-on-dark-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+.logoutBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.content {
+  min-width: 0;
+  overflow-x: hidden;
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+}
+
+.backdrop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .content {
+    margin-left: 0;
+    padding-top: var(--topbar-height);
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
+    height: var(--topbar-height);
+    background: var(--radia-dark);
+    border-bottom: var(--border-width) solid rgba(255, 255, 255, 0.08);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+  }
+
+  .hamburger {
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  .topbarUser {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 6, 14, 0.5);
+    z-index: 35;
+  }
+
+  .sidebarMobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(84vw, 300px);
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+    z-index: 40;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+}
+
+/* Secciones futuras (Chatbot IA, Foro, Cursos): visibles pero no navegables. */
+.navItemDisabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  justify-content: space-between;
+}
+
+.navItemDisabled:hover {
+  background: transparent;
+  color: var(--color-text-on-dark-muted);
+}
+
+.comingSoon {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  border: var(--border-width) solid rgba(255, 255, 255, 0.18);
+  color: var(--color-text-on-dark-muted);
+  flex-shrink: 0;
+}

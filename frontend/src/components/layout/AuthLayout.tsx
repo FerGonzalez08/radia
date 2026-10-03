@@ -1,0 +1,72 @@
+import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
+import { Logo } from "../ui/Logo";
+import { useTheme } from "../../context/ThemeContext";
+import styles from "./AuthLayout.module.css";
+
+interface AuthLayoutProps {
+  children: ReactNode;
+  title: string;
+  subtitle?: string;
+  eyebrow?: string;
+  footer?: ReactNode;
+}
+
+const HIGHLIGHTS = [
+  "Mentoría 1:1 entre estudiantes y profesionales de ingeniería.",
+  "Busca mentoras por categoría y agenda un bloque de disponibilidad real.",
+  "Chat en tiempo real con historial y confirmación de entrega.",
+  "Un espacio construido por y para mujeres en STEM.",
+];
+
+export function AuthLayout({ children, title, subtitle, eyebrow, footer }: AuthLayoutProps) {
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <div className={styles.page}>
+      <aside className={styles.brandPanel}>
+        <div className={styles.brandGlow} aria-hidden />
+        <Link to="/" className={styles.brandLogo}>
+          <Logo variant="full-white" height={38} />
+        </Link>
+
+        <div className={styles.brandCopy}>
+          <p className={styles.brandKicker}>Women Tech UCatólica</p>
+          <h1 className={styles.brandTitle}>
+            Conectamos mentees con mentores que ya recorrieron el camino en STEM.
+          </h1>
+          <ul className={styles.brandList}>
+            {HIGHLIGHTS.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+
+        <p className={styles.brandFoot}>© 2026 RADIA. Todos los derechos reservados.</p>
+      </aside>
+
+      <main className={styles.formPanel}>
+        <button
+          type="button"
+          className={styles.themeToggle}
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+        >
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+        <div className={styles.formCard}>
+          <div className={styles.mobileLogo}>
+            <Logo variant="full" height={32} />
+          </div>
+          {eyebrow && <p className={styles.eyebrow}>{eyebrow}</p>}
+          <h2 className={styles.title}>{title}</h2>
+          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+          <div className={styles.content}>{children}</div>
+          {footer && <div className={styles.footer}>{footer}</div>}
+        </div>
+      </main>
+    </div>
+  );
+}

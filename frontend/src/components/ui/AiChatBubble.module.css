@@ -1,0 +1,112 @@
+.fab {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--radia-gradient);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  z-index: 60;
+  transition: transform var(--transition-fast);
+}
+.fab:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.panel {
+  position: fixed;
+  right: var(--space-6);
+  bottom: calc(var(--space-6) + 68px);
+  width: min(86vw, 300px);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  z-index: 60;
+  animation: radia-fade-in var(--transition-base) both;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--radia-dark);
+  color: #fff;
+}
+
+.panelTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.panelClose {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+}
+.panelClose:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-5);
+}
+
+.panelIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--radia-gradient-soft);
+  color: var(--color-primary-strong);
+}
+
+.panelText {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.panelBadge {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--radia-gradient-soft);
+  color: var(--color-primary-strong);
+}
+
+@media (max-width: 480px) {
+  .fab {
+    right: var(--space-4);
+    bottom: var(--space-4);
+  }
+  .panel {
+    right: var(--space-4);
+    bottom: calc(var(--space-4) + 68px);
+  }
+}

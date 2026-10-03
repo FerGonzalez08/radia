@@ -1,0 +1,183 @@
+/* v3: mismo lenguaje editorial del landing -- todo alineado a la
+   izquierda, listas con divisores finos en vez de tarjetas con sombra o
+   iconos en circulo, acento solido para numeros/etiquetas pequenas. */
+
+.page {
+  padding: var(--space-8) var(--space-8) var(--space-12);
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.hero {
+  padding-bottom: var(--space-8);
+  margin-bottom: var(--space-8);
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.hero h1 {
+  color: var(--color-text);
+  font-size: var(--text-display-md);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--radia-accent);
+  margin-bottom: var(--space-3);
+}
+
+.heroRule {
+  width: 48px;
+  height: 3px;
+  margin: var(--space-4) 0 var(--space-5);
+  border: none;
+  background: var(--radia-accent);
+}
+
+.headline {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.body {
+  color: var(--color-text-muted);
+  max-width: 540px;
+  margin-bottom: var(--space-6);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: var(--radius-sm);
+  background: var(--radia-gradient);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: filter var(--transition-fast), transform var(--transition-fast);
+}
+.cta:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+/* ---- Stats: una sola caja con divisores internos finos ---- */
+.statsBox {
+  display: flex;
+  border-top: var(--border-width) solid var(--color-border);
+  border-bottom: var(--border-width) solid var(--color-border);
+  margin-bottom: var(--space-10);
+}
+
+.statRow {
+  flex: 1;
+  padding: var(--space-5) var(--space-5);
+  text-align: left;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.statRow + .statRow {
+  border-left: var(--border-width) solid var(--color-border);
+}
+.statRowIn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: 26px;
+  color: var(--radia-accent);
+}
+
+.statLabel {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+/* ---- Accesos rapidos: lista con divisores finos, sin tarjetas ---- */
+.list {
+  display: flex;
+  flex-direction: column;
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-2);
+  border-bottom: var(--border-width) solid var(--color-border);
+  text-decoration: none;
+  color: var(--color-text);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: background var(--transition-fast), opacity 0.5s ease, transform 0.5s ease;
+}
+.listRow:hover {
+  background: var(--color-bg-alt);
+}
+.listRow:hover .listArrow {
+  transform: translateX(3px);
+}
+.listRowIn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.listIcon {
+  flex-shrink: 0;
+  color: var(--radia-accent);
+}
+
+.listBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.listBody h3 {
+  font-size: 15.5px;
+  margin-bottom: 2px;
+}
+
+.listBody p {
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+}
+
+.listArrow {
+  flex-shrink: 0;
+  color: var(--color-text-faint);
+  transition: transform var(--transition-fast);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: var(--space-5);
+  }
+  .statsBox {
+    flex-direction: column;
+  }
+  .statRow + .statRow {
+    border-left: none;
+    border-top: var(--border-width) solid var(--color-border);
+  }
+  .listRow {
+    align-items: flex-start;
+  }
+  .listArrow {
+    display: none;
+  }
+}

@@ -1,0 +1,191 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  line-height: 1.08;
+  margin: 0;
+  letter-spacing: var(--tracking-display);
+}
+
+p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: rgba(154, 33, 119, 0.22);
+}
+
+/* Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+.text-gradient {
+  background: var(--radia-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- Utilidades v2 "bold minimal": bloques de seccion a todo el ancho,
+   alternando superficie clara/oscura, y numeros grandes de paso/feature. ---- */
+.section-ink {
+  background: var(--radia-dark);
+  color: var(--color-text-on-dark);
+}
+
+.section-ink .eyebrow {
+  color: #e59bc0;
+}
+
+.big-number {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  font-size: clamp(2.4rem, 1.9rem + 2vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  background: var(--radia-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.app-shell-loading {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: var(--radia-dark);
+}
+
+@keyframes radia-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes radia-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes radia-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.fade-in {
+  animation: radia-fade-in var(--transition-base) both;
+}
+
+/* Entrada para filas/tarjetas de listas dentro de las paginas internas
+   (mentee/mentor/admin) -- un poco mas marcada que radia-fade-in, pensada
+   para verse en cascada via animation-delay por nth-child. */
+@keyframes radia-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Red de seguridad global: si el usuario pidio "reducir movimiento" en su
+   sistema operativo, se apagan todas las animaciones/transiciones del
+   sitio (landing, auth, dashboard y las vistas internas por rol). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

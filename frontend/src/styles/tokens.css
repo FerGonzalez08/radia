@@ -1,0 +1,166 @@
+/**
+ * Design tokens de RADIA -- v2 "Bold Minimal".
+ * Colores extraidos del Manual de Marca RADIA v1.0 (2026):
+ * - Degradado oficial: #D1155B (0%) -> #B01B62 (22%) -> #9A2177 (48%) -> #872580 (68%) -> #682D90 (100%)
+ * - Magenta plano: #C81E63 . Violeta plano: #6C3A9E . Negro: #111111
+ * - Fondo oscuro de portada: #1A1420 . Fondo claro de contenido: #FBF9FC
+ * El degradado siempre corre de izquierda (magenta) a derecha (violeta), nunca vertical ni radial.
+ *
+ * v2: direccion visual mas "bold minimal" (tipografia grande y pesada,
+ * superficies planas con borde definido en vez de sombras suaves difusas,
+ * secciones de bloque alternando claro/oscuro) manteniendo intacta la
+ * paleta de marca -- nada de monocromo, el degradado sigue siendo la firma
+ * de RADIA.
+ */
+:root {
+  color-scheme: light;
+
+  /* ---- Marca: degradado y solidos ---- */
+  --radia-magenta-start: #d1155b;
+  --radia-magenta-22: #b01b62;
+  --radia-mid-48: #9a2177;
+  --radia-violet-68: #872580;
+  --radia-violet-end: #682d90;
+
+  --radia-magenta: #c81e63;
+  --radia-violet: #6c3a9e;
+  --radia-ink: #111111;
+  --radia-dark: #1a0f22;
+  --radia-dark-2: #241730;
+  --radia-light: #fbf9fc;
+
+  --radia-gradient: linear-gradient(
+    90deg,
+    var(--radia-magenta-start) 0%,
+    var(--radia-magenta-22) 22%,
+    var(--radia-mid-48) 48%,
+    var(--radia-violet-68) 68%,
+    var(--radia-violet-end) 100%
+  );
+  --radia-gradient-soft: linear-gradient(
+    90deg,
+    rgba(209, 21, 91, 0.12) 0%,
+    rgba(154, 33, 119, 0.12) 48%,
+    rgba(104, 45, 144, 0.12) 100%
+  );
+  --radia-gradient-text: linear-gradient(90deg, var(--radia-magenta-start) 0%, var(--radia-violet-end) 100%);
+
+  /* ---- Superficie / texto ---- */
+  --color-bg: var(--radia-light);
+  --color-bg-alt: #f3eef7;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-border: #e7e0ee;
+  --color-border-strong: #d9cee6;
+  --color-text: #1c1620;
+  --color-text-muted: #6b6274;
+  --color-text-faint: #948c9e;
+  --color-text-on-dark: #f6f1fa;
+  --color-text-on-dark-muted: #c9bdd6;
+
+  --color-primary: var(--radia-magenta);
+  --color-primary-strong: var(--radia-mid-48);
+  --color-secondary: var(--radia-violet);
+  --color-focus: #9a2177;
+
+  --color-success: #1a9c6b;
+  --color-success-bg: #e5f7ef;
+  --color-warning: #b8790c;
+  --color-warning-bg: #fbf0dc;
+  --color-danger: #d1174a;
+  --color-danger-bg: #fbe6ed;
+  --color-info: #4457d6;
+  --color-info-bg: #eaedfc;
+  --color-online: #21b573;
+  --color-offline: #9a93a3;
+
+  /* ---- Tipografia ---- */
+  /* v3: titulo de impacto editorial (condensado, negro solido) en vez de
+     la geometrica redondeada tipo "SaaS generico" -- es la diferencia que
+     mas se nota de un vistazo. Archivo Black solo trae el peso 400 (ya es
+     el maximo), por eso --weight-display baja a 400 en vez de 800. */
+  --font-display: "Archivo Black", "Sora", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Space Mono", monospace;
+
+  --text-hero: clamp(2.6rem, 1.9rem + 3.4vw, 4.6rem);
+  --text-display-lg: clamp(2rem, 1.6rem + 1.8vw, 2.9rem);
+  --text-display-md: clamp(1.5rem, 1.3rem + 0.9vw, 1.9rem);
+  --weight-display: 400;
+  --tracking-display: -0.01em;
+
+  /* Acento solido para numeros/etiquetas/codigos -- en vez de pintar cada
+     chip o badge con el degradado completo (ese "todo en degradado" es
+     justo lo que lee como plantilla generica de IA). El degradado de
+     marca se reserva para 1-2 momentos: el CTA principal y una palabra
+     destacada por seccion. */
+  --radia-accent: var(--radia-magenta);
+
+  /* ---- Radios / sombras / espaciado ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  --border-width: 1.5px;
+  --border-width-bold: 2px;
+
+  /* v2: sombras mas planas y cortas; el borde define la superficie, la
+     sombra solo da una pista minima de elevacion en el hover. */
+  --shadow-sm: 0 1px 2px rgba(26, 15, 34, 0.05);
+  --shadow-md: 0 6px 16px -8px rgba(26, 15, 34, 0.22);
+  --shadow-lg: 0 16px 32px -12px rgba(26, 15, 34, 0.28);
+  --shadow-glow: 0 0 0 4px rgba(154, 33, 119, 0.14);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  --sidebar-width: 264px;
+  --sidebar-width-collapsed: 84px;
+  --topbar-height: 64px;
+
+  --transition-fast: 140ms ease;
+  --transition-base: 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/**
+ * Modo oscuro -- mismo degradado y acentos de marca, solo cambian las
+ * superficies/texto para fondo oscuro. Se activa con [data-theme="dark"]
+ * en <html> (ver ThemeContext). No se toca nada del degradado ni de los
+ * acentos solidos: la marca se ve igual en los dos modos.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: var(--radia-dark);
+  --color-bg-alt: #150c1b;
+  --color-surface: var(--radia-dark-2);
+  --color-surface-raised: #2c1d38;
+  --color-border: rgba(246, 241, 250, 0.12);
+  --color-border-strong: rgba(246, 241, 250, 0.22);
+  --color-text: var(--color-text-on-dark);
+  --color-text-muted: var(--color-text-on-dark-muted);
+  --color-text-faint: #8d8296;
+  --color-text-on-dark: #f6f1fa;
+  --color-text-on-dark-muted: #c9bdd6;
+
+  --color-success-bg: rgba(26, 156, 107, 0.16);
+  --color-warning-bg: rgba(184, 121, 12, 0.18);
+  --color-danger-bg: rgba(209, 23, 74, 0.18);
+  --color-info-bg: rgba(68, 87, 214, 0.18);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 16px -8px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 32px -12px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 0 4px rgba(154, 33, 119, 0.3);
+}

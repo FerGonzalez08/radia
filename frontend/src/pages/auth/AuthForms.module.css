@@ -1,0 +1,127 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+@media (max-width: 480px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rowBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.link {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-primary-strong);
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
+}
+
+.switchAuth {
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+}
+.switchAuth a {
+  color: var(--color-primary-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+.switchAuth a:hover {
+  text-decoration: underline;
+}
+
+.demoBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border-strong);
+  background: var(--color-bg-alt);
+}
+
+.demoTitle {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+.demoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+.demoRow button {
+  border: none;
+  background: transparent;
+  color: var(--color-primary-strong);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+.demoRow button:hover {
+  text-decoration: underline;
+}
+
+.codeHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.codeIconWrap {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background: var(--radia-gradient-soft);
+  color: var(--color-primary-strong);
+  margin-bottom: var(--space-2);
+}
+
+.resendRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.resendBtn {
+  border: none;
+  background: transparent;
+  color: var(--color-primary-strong);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+}
+.resendBtn:disabled {
+  color: var(--color-text-faint);
+  cursor: not-allowed;
+}

@@ -1,0 +1,44 @@
+.page {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100%;
+  min-height: 100vh;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+  min-height: 0;
+}
+
+.sidebarHeader {
+  padding: var(--space-5) var(--space-5) var(--space-3);
+}
+.sidebarHeader h1 {
+  font-size: 19px;
+}
+
+.windowWrap {
+  min-height: 0;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .page {
+    grid-template-columns: 1fr;
+    min-height: calc(100vh - var(--topbar-height));
+  }
+  .sidebar,
+  .windowWrap {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .sidebarHiddenMobile {
+    display: none;
+  }
+  .windowHiddenMobile {
+    display: none;
+  }
+}

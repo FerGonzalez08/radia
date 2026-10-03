@@ -1,0 +1,114 @@
+.page {
+  padding: var(--space-8);
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.section {
+  margin-bottom: var(--space-6);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  margin-bottom: var(--space-3);
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  transition: border-color var(--transition-fast);
+  animation: radia-rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.item:hover {
+  border-color: var(--radia-mid-48);
+}
+.item:nth-child(1) { animation-delay: 0ms; }
+.item:nth-child(2) { animation-delay: 60ms; }
+.item:nth-child(3) { animation-delay: 120ms; }
+.item:nth-child(4) { animation-delay: 180ms; }
+.item:nth-child(n+5) { animation-delay: 240ms; }
+
+.studentName {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.slotText {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.itemActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.acceptBtn,
+.rejectBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  border-radius: var(--radius-pill);
+  border: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.acceptBtn {
+  background: var(--color-success-bg);
+  color: #0d6b48;
+}
+.rejectBtn {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+.acceptBtn:disabled,
+.rejectBtn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.confirmada,
+.completada {
+  background: var(--color-success-bg);
+  color: #0d6b48;
+}
+.rechazada,
+.cancelada {
+  background: var(--color-danger-bg);
+  color: #a3123d;
+}

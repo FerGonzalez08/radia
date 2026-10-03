@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.core.deps import require_admin
 from app.models.role import Role
 from app.models.role_change_log import RoleChangeLog
-from app.schemas.role import RoleOut, UserWithRoleOut
+from app.schemas.role import RoleChangeLogOut, RoleOut, UserWithRoleOut
 
 router = APIRouter(prefix="/roles", tags=["roles"])
 
@@ -23,6 +23,45 @@ def list_roles(db: Session = Depends(get_db)):
 @router.get("/users", response_model=list[UserWithRoleOut])
 async def list_users(_admin: dict = Depends(require_admin)):
     return await list_users_internal()
+
+
+@router.get("/audit-log", response_model=list[RoleChangeLogOut])
+async def list_audit_log(db: Session = Depends(get_db), _admin: dict = Depends(require_admin)):
+    """HU-AUDIT - Traza de todos los cambios de rol (promover/revertir), mas
+    reciente primero, con nombres y roles ya resueltos para el panel de
+    administracion (ningun dato tecnico crudo, solo lo que se va a mostrar)."""
+    entries = db.query(RoleChangeLog).order_by(RoleChangeLog.changed_at.desc()).all()
+    if not entries:
+        return []
+
+    users_by_id = {u["id"]: u for u in await list_users_internal()}
+    roles_by_id = {str(r.id): r.name for r in db.query(Role).all()}
+
+    def user_info(user_id: uuid.UUID) -> tuple[str, str]:
+        user = users_by_id.get(str(user_id))
+        if user is None:
+            return "Usuario eliminado", "-"
+        return user["nombre"], user["email"]
+
+    result = []
+    for entry in entries:
+        admin_nombre, admin_email = user_info(entry.admin_user_id)
+        target_nombre, target_email = user_info(entry.target_user_id)
+        result.append(
+            RoleChangeLogOut(
+                id=entry.id,
+                changed_at=entry.changed_at,
+                admin_user_id=entry.admin_user_id,
+                admin_nombre=admin_nombre,
+                admin_email=admin_email,
+                target_user_id=entry.target_user_id,
+                target_nombre=target_nombre,
+                target_email=target_email,
+                previous_role=roles_by_id.get(str(entry.previous_role_id), "Desconocido"),
+                new_role=roles_by_id.get(str(entry.new_role_id), "Desconocido"),
+            )
+        )
+    return result
 
 
 async def _get_target_user(user_id: uuid.UUID) -> dict:
