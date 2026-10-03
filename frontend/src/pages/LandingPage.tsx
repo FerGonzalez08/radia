@@ -1,14 +1,34 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Bot, BookOpen, Home, LogIn, Megaphone, Menu, MessagesSquare, Sparkles, UserPlus, Users, X } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  Home,
+  LogIn,
+  Menu,
+  MessagesSquare,
+  Search,
+  Sparkles,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
 import { Logo } from "../components/ui/Logo";
 import styles from "./LandingPage.module.css";
 
+// Chatbot IA (microservicio futuro) sigue anunciado aquí porque ya tiene
+// fecha de integración prevista; Foro y Cursos solo se muestran una vez
+// hay sesión iniciada (ver features/navigation/menuConfig.ts).
 const FEATURES = [
   {
     icon: Users,
     title: "Mentoría 1:1",
-    body: "Cada mentee se conecta con un mentor que ya recorrió el camino en ingeniería, para acompañarlo en su crecimiento académico y profesional.",
+    body: "Cada mentee se conecta con una mentora que ya recorrió el camino en ingeniería, para acompañarla en su crecimiento académico y profesional.",
+  },
+  {
+    icon: Search,
+    title: "Match por categoría",
+    body: "Busca mentoras por área (Python, React, bases de datos, UX/UI y más), revisa su disponibilidad real y agenda un bloque en minutos.",
   },
   {
     icon: MessagesSquare,
@@ -22,20 +42,25 @@ const FEATURES = [
   },
 ];
 
-const STEPS = [
-  { n: "01", title: "Crea tu cuenta", body: "Regístrate como mentee o mentor y verifica tu correo en minutos." },
-  { n: "02", title: "Te conectamos", body: "Te asignamos con la contraparte adecuada dentro de la comunidad RADIA." },
-  { n: "03", title: "Empieza a conversar", body: "Usa el chat para dar seguimiento al acompañamiento en tiempo real." },
+const STATS = [
+  { value: "4", label: "microservicios en producción" },
+  { value: "100%", label: "verificación por correo" },
+  { value: "< 1.5s", label: "entrega de mensajes p95" },
 ];
 
-// Vista previa del alcance completo de RADIA (núcleo + módulos futuros) para
-// quien todavía no inicia sesión. Los módulos futuros solo se muestran, no
-// navegan a ningún lado todavía.
+const STEPS = [
+  { n: "01", title: "Crea tu cuenta", body: "Regístrate como mentee y verifica tu correo en minutos." },
+  { n: "02", title: "Encuentra tu match", body: "Filtra mentoras por categoría y elige un bloque de disponibilidad." },
+  { n: "03", title: "Empieza a conversar", body: "Usa el chat en tiempo real para dar seguimiento a tu acompañamiento." },
+];
+
+// Menú del landing: solo secciones públicas de esta misma página. Foro,
+// Cursos y el resto de módulos futuros se ven en el menú una vez hay
+// sesión iniciada — no tiene sentido anunciarlos antes (ver HU012).
 const MENU_LINKS = [
   { label: "Inicio", icon: Home, href: "#inicio" },
-  { label: "Chatbot IA", icon: Bot, disabled: true },
-  { label: "Foro", icon: Megaphone, disabled: true },
-  { label: "Cursos", icon: BookOpen, disabled: true },
+  { label: "Características", icon: Sparkles, href: "#caracteristicas" },
+  { label: "Cómo funciona", icon: ArrowRight, href: "#como-funciona" },
 ];
 
 export default function LandingPage() {
@@ -88,15 +113,6 @@ export default function LandingPage() {
             <nav className={styles.menuList}>
               {MENU_LINKS.map((item) => {
                 const Icon = item.icon;
-                if (item.disabled) {
-                  return (
-                    <span key={item.label} className={[styles.menuItem, styles.menuItemDisabled].join(" ")} aria-disabled="true">
-                      <Icon size={18} />
-                      <span>{item.label}</span>
-                      <span className={styles.menuBadge}>Pronto</span>
-                    </span>
-                  );
-                }
                 return (
                   <a key={item.label} href={item.href} className={styles.menuItem} onClick={() => setMenuOpen(false)}>
                     <Icon size={18} />
@@ -123,37 +139,80 @@ export default function LandingPage() {
       <main>
         <section className={styles.hero}>
           <div className={styles.heroGlow} aria-hidden />
-          <p className={styles.eyebrow}>
-            <Sparkles size={14} /> Women Tech UCatólica
-          </p>
-          <h1 className={styles.heroTitle}>
-            Conectamos mentees con <span className="text-gradient">mentores</span> que ya recorrieron el camino en STEM.
-          </h1>
-          <p className={styles.heroSubtitle}>
-            RADIA es la plataforma de mentoría de la comunidad Women Tech UCatólica: acompañamiento cercano,
-            conversación en tiempo real y una red construida por y para mujeres en ingeniería.
-          </p>
-          <div className={styles.heroActions}>
-            <Link to="/registro" className={styles.primaryCta}>
-              Crear cuenta gratis <ArrowRight size={16} />
-            </Link>
-            <Link to="/iniciar-sesion" className={styles.secondaryCta}>
-              Ya tengo cuenta
-            </Link>
+          <div className={styles.heroGrid}>
+            <div className={styles.heroCopy}>
+              <p className={styles.eyebrow}>
+                <Sparkles size={14} /> Women Tech UCatólica
+              </p>
+              <h1 className={styles.heroTitle}>
+                Conectamos mentees con <span className="text-gradient">mentoras</span> que ya recorrieron el camino en
+                STEM.
+              </h1>
+              <p className={styles.heroSubtitle}>
+                RADIA es la plataforma de mentoría de la comunidad Women Tech UCatólica: búsqueda por categorías,
+                agendamiento de disponibilidad y conversación en tiempo real en una sola red.
+              </p>
+              <div className={styles.heroActions}>
+                <Link to="/registro" className={styles.primaryCta}>
+                  Crear cuenta gratis <ArrowRight size={16} />
+                </Link>
+                <Link to="/iniciar-sesion" className={styles.secondaryCta}>
+                  Ya tengo cuenta
+                </Link>
+              </div>
+            </div>
+
+            <div className={styles.heroVisual} aria-hidden="true">
+              <div className={styles.mockCard}>
+                <div className={styles.mockCardHeader}>
+                  <span className={styles.mockDot} />
+                  <span className={styles.mockDot} />
+                  <span className={styles.mockDot} />
+                  <span className={styles.mockCardTitle}>Chat RADIA</span>
+                </div>
+                <div className={styles.mockChat}>
+                  <div className={[styles.mockBubble, styles.mockBubbleIn].join(" ")}>
+                    ¡Hola! Vi tu perfil, ¿en qué semestre vas?
+                  </div>
+                  <div className={[styles.mockBubble, styles.mockBubbleOut].join(" ")}>
+                    7° de Ing. de Sistemas, quiero reforzar bases de datos 🙌
+                  </div>
+                  <div className={styles.mockTyping}>
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </div>
+              </div>
+              <div className={styles.mockBadge}>
+                <Search size={13} /> Match por categoría
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className={styles.features}>
+        <section className={styles.stats}>
+          {STATS.map((s) => (
+            <div className={styles.statItem} key={s.label}>
+              <p className={styles.statValue}>{s.value}</p>
+              <p className={styles.statLabel}>{s.label}</p>
+            </div>
+          ))}
+        </section>
+
+        <section className={styles.features} id="caracteristicas">
           {FEATURES.map((f) => (
             <div className={styles.featureCard} key={f.title}>
-              <f.icon size={20} />
+              <span className={styles.featureIcon}>
+                <f.icon size={19} />
+              </span>
               <h3>{f.title}</h3>
               <p>{f.body}</p>
             </div>
           ))}
         </section>
 
-        <section className={styles.steps}>
+        <section className={styles.steps} id="como-funciona">
           <p className={styles.eyebrow} style={{ marginBottom: 8 }}>
             Cómo funciona
           </p>

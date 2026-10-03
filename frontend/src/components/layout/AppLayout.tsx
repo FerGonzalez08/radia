@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { LogOut, Menu, X } from "lucide-react";
 import { Logo } from "../ui/Logo";
+import { AiChatBubble } from "../ui/AiChatBubble";
 import { useAuth } from "../../context/AuthContext";
 import { getMenuForRole, ROLE_LABEL } from "../../features/navigation/menuConfig";
 import styles from "./AppLayout.module.css";
@@ -129,6 +130,8 @@ export function AppLayout() {
       <main className={styles.content}>
         <Outlet />
       </main>
+
+      <AiChatBubble />
     </div>
   );
 }

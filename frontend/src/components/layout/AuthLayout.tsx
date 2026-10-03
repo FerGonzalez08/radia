@@ -13,7 +13,8 @@ interface AuthLayoutProps {
 
 const HIGHLIGHTS = [
   "Mentoría 1:1 entre estudiantes y profesionales de ingeniería.",
-  "Chat en tiempo real, roles y navegación pensados para el acompañamiento.",
+  "Busca mentoras por categoría y agenda un bloque de disponibilidad real.",
+  "Chat en tiempo real con historial y confirmación de entrega.",
   "Un espacio construido por y para mujeres en STEM.",
 ];
 

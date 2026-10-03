@@ -3,15 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routers import auth, internal
+from app.models import conversation, message, last_seen  # noqa: F401
+from app.routers import chat, ws
 
-
-
-# Crea las tablas si no existen. Válido para desarrollo local;
-# en producción esto se reemplaza por migraciones de Alembic.
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="RADIA Auth Service", version="0.1.0")
+app = FastAPI(title="RADIA Chat Service", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,9 +17,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.include_router(auth.router)
-app.include_router(internal.router)
+app.include_router(chat.router)
+app.include_router(ws.router)
 
 
 @app.get("/health")
