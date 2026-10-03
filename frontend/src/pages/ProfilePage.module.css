@@ -1,6 +1,6 @@
 .page {
   padding: var(--space-8);
-  max-width: 720px;
+  max-width: 920px;
   margin: 0 auto;
 }
 
@@ -67,4 +67,56 @@
   font-size: 14.5px;
   color: var(--color-text);
   font-weight: 600;
+}
+
+.auditSection {
+  margin-top: var(--space-8);
+  animation: radia-rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 120ms;
+}
+
+.auditHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: var(--space-4);
+  color: var(--radia-accent);
+}
+
+.auditTitle {
+  font-size: 16px;
+  color: var(--color-text);
+  margin: 0 0 2px;
+}
+
+.auditSubtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.auditEmpty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 13.5px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.auditUser {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.auditUserName {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--color-text);
+}
+
+.auditUserEmail {
+  font-size: 12px;
+  color: var(--color-text-faint);
 }

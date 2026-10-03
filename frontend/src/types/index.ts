@@ -96,6 +96,20 @@ export interface AdminUserRow {
   avatarColor: string;
 }
 
+// --- Auditoría de cambios de rol (role-service) -----------------------------
+// Traza de cada promoción/reversión mentee <-> mentor hecha por un
+// administrador, para el panel de "Mi perfil" del administrador.
+export interface RoleAuditEntry {
+  id: string;
+  fecha: string;
+  adminNombre: string;
+  adminCorreo: string;
+  usuarioNombre: string;
+  usuarioCorreo: string;
+  rolAnterior: string;
+  rolNuevo: string;
+}
+
 // --- Categorías y búsqueda de mentoras (navigation-service) ----------------
 
 export interface Category {

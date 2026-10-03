@@ -132,3 +132,35 @@
   --transition-fast: 140ms ease;
   --transition-base: 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/**
+ * Modo oscuro -- mismo degradado y acentos de marca, solo cambian las
+ * superficies/texto para fondo oscuro. Se activa con [data-theme="dark"]
+ * en <html> (ver ThemeContext). No se toca nada del degradado ni de los
+ * acentos solidos: la marca se ve igual en los dos modos.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: var(--radia-dark);
+  --color-bg-alt: #150c1b;
+  --color-surface: var(--radia-dark-2);
+  --color-surface-raised: #2c1d38;
+  --color-border: rgba(246, 241, 250, 0.12);
+  --color-border-strong: rgba(246, 241, 250, 0.22);
+  --color-text: var(--color-text-on-dark);
+  --color-text-muted: var(--color-text-on-dark-muted);
+  --color-text-faint: #8d8296;
+  --color-text-on-dark: #f6f1fa;
+  --color-text-on-dark-muted: #c9bdd6;
+
+  --color-success-bg: rgba(26, 156, 107, 0.16);
+  --color-warning-bg: rgba(184, 121, 12, 0.18);
+  --color-danger-bg: rgba(209, 23, 74, 0.18);
+  --color-info-bg: rgba(68, 87, 214, 0.18);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 16px -8px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 32px -12px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 0 4px rgba(154, 33, 119, 0.3);
+}

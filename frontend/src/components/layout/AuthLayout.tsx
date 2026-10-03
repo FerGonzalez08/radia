@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
 import { Logo } from "../ui/Logo";
+import { useTheme } from "../../context/ThemeContext";
 import styles from "./AuthLayout.module.css";
 
 interface AuthLayoutProps {
@@ -19,6 +21,8 @@ const HIGHLIGHTS = [
 ];
 
 export function AuthLayout({ children, title, subtitle, eyebrow, footer }: AuthLayoutProps) {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className={styles.page}>
       <aside className={styles.brandPanel}>
@@ -43,6 +47,15 @@ export function AuthLayout({ children, title, subtitle, eyebrow, footer }: AuthL
       </aside>
 
       <main className={styles.formPanel}>
+        <button
+          type="button"
+          className={styles.themeToggle}
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+        >
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         <div className={styles.formCard}>
           <div className={styles.mobileLogo}>
             <Logo variant="full" height={32} />

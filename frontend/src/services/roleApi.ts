@@ -6,7 +6,7 @@
 // `PATCH /auth/admin/users/:id/role` (auth-service) ya NO EXISTEN — la
 // gestión de roles se extrajo a este microservicio nuevo. UsersPage.tsx usa
 // este módulo, no api.ts, para todo lo relacionado a roles.
-import type { AdminUserRow } from "../types";
+import type { AdminUserRow, RoleAuditEntry } from "../types";
 import { pickAvatarColor } from "./api";
 import { roleIdToRole } from "./roles";
 import { createApiClient } from "./httpClient";
@@ -56,4 +56,37 @@ export async function revertToMentee(accessToken: string, userId: string): Promi
     headers: authHeaders(accessToken),
   });
   return mapUserRow(result);
+}
+
+
+interface RoleChangeLogOut {
+  id: string;
+  changed_at: string;
+  admin_user_id: string;
+  admin_nombre: string;
+  admin_email: string;
+  target_user_id: string;
+  target_nombre: string;
+  target_email: string;
+  previous_role: string;
+  new_role: string;
+}
+
+function mapAuditEntry(e: RoleChangeLogOut): RoleAuditEntry {
+  return {
+    id: e.id,
+    fecha: e.changed_at,
+    adminNombre: e.admin_nombre,
+    adminCorreo: e.admin_email,
+    usuarioNombre: e.target_nombre,
+    usuarioCorreo: e.target_email,
+    rolAnterior: e.previous_role,
+    rolNuevo: e.new_role,
+  };
+}
+
+/** Auditoría - Traza de todos los cambios de rol (promover/revertir), para el perfil del administrador. */
+export async function getRoleAuditLog(accessToken: string): Promise<RoleAuditEntry[]> {
+  const result = await request<RoleChangeLogOut[]>("/roles/audit-log", { headers: authHeaders(accessToken) });
+  return result.map(mapAuditEntry);
 }

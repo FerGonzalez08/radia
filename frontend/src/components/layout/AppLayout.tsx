@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import { Logo } from "../ui/Logo";
 import { AiChatBubble } from "../ui/AiChatBubble";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { getMenuForRole, ROLE_LABEL } from "../../features/navigation/menuConfig";
 import styles from "./AppLayout.module.css";
 
@@ -20,6 +21,7 @@ function initials(name: string): string {
 
 export function AppLayout() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(
@@ -58,6 +60,14 @@ export function AppLayout() {
         </button>
         <Logo variant="full-white" height={26} />
         <div className={styles.topbarUser}>
+          <button
+            className={styles.themeToggle}
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           {user && (
             <>
               <span className={styles.avatar} style={{ background: user.avatarColor }}>
@@ -120,6 +130,14 @@ export function AppLayout() {
                 <p className={styles.userRole}>{ROLE_LABEL[user.rol]}</p>
               </div>
             </div>
+            <button
+              className={styles.themeToggleFull}
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            >
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === "dark" ? "Modo claro" : "Modo oscuro"}
+            </button>
             <button className={styles.logoutBtn} onClick={() => logout()}>
               <LogOut size={16} /> Cerrar sesión
             </button>
