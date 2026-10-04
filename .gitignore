@@ -25,3 +25,6 @@ dist/
 *.tfstate
 *.tfstate.*
 *.tfvars
+
+# Respaldos de bases de datos
+backups/
