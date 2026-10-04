@@ -8,7 +8,7 @@ from app.models import availability_slot, category, mentor_category, mentor_sett
 from app.models.category import Category
 from app.routers import availability, categories, mentorships
 
-Base.metadata.create_all(bind=engine)
+# Las tablas se gestionan con Alembic (alembic upgrade head), no con create_all.
 
 app = FastAPI(title="RADIA Navigation Service", version="0.1.0")
 

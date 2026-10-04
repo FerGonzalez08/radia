@@ -7,7 +7,7 @@ from app.core.database import Base, SessionLocal, engine
 from app.models.role import Role
 from app.routers import roles
 
-Base.metadata.create_all(bind=engine)
+# Las tablas se gestionan con Alembic (alembic upgrade head), no con create_all.
 
 app = FastAPI(title="RADIA Role Service", version="0.1.0")
 

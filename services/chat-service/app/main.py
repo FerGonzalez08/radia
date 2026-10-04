@@ -6,7 +6,7 @@ from app.core.database import Base, engine
 from app.models import conversation, message, last_seen  # noqa: F401
 from app.routers import chat, ws
 
-Base.metadata.create_all(bind=engine)
+# Las tablas se gestionan con Alembic (alembic upgrade head), no con create_all.
 
 app = FastAPI(title="RADIA Chat Service", version="0.1.0")
 

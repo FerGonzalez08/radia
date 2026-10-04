@@ -9,7 +9,9 @@ from app.routers import auth, internal
 
 # Crea las tablas si no existen. Válido para desarrollo local;
 # en producción esto se reemplaza por migraciones de Alembic.
-Base.metadata.create_all(bind=engine)
+# Las tablas ahora se gestionan con Alembic (alembic upgrade head), no con
+# create_all — ver alembic/versions. Se deja este comentario para que quede
+# explícito que el cambio fue intencional.
 
 app = FastAPI(title="RADIA Auth Service", version="0.1.0")
 
