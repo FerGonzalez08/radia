@@ -76,6 +76,10 @@ async def mark_as_read(
     session: dict = Depends(get_current_session),
 ):
     my_id = uuid.UUID(session["user_id"])
+
+    if not await has_active_mentorship(str(my_id), str(other_user_id)):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No hay una mentoría activa entre estos usuarios")
+
     conversation = get_or_create_conversation(db, my_id, session["role_id"], other_user_id)
 
     db.query(Message).filter(
@@ -94,6 +98,10 @@ async def get_status(
     session: dict = Depends(get_current_session),
 ):
     my_id = uuid.UUID(session["user_id"])
+
+    if not await has_active_mentorship(str(my_id), str(other_user_id)):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "No hay una mentoría activa entre estos usuarios")
+
     conversation = get_or_create_conversation(db, my_id, session["role_id"], other_user_id)
 
     unread_count = db.query(Message).filter(
