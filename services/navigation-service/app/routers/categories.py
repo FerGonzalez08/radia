@@ -55,7 +55,10 @@ def update_category(
     if category is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Categoría no encontrada")
 
-    if payload.name is not None:
+    if payload.name is not None and payload.name != category.name:
+        duplicate = db.query(Category).filter(Category.name == payload.name, Category.id != category_id).first()
+        if duplicate is not None:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe una categoría con ese nombre")
         category.name = payload.name
     if payload.description is not None:
         category.description = payload.description
