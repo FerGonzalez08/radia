@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime, time
 
 from pydantic import BaseModel
 
@@ -16,6 +16,11 @@ class MentorshipOut(BaseModel):
     status: str
     created_at: datetime
     confirmed_at: datetime | None
+    student_nombre: str | None = None
+    mentor_nombre: str | None = None
+    slot_date: date | None = None
+    slot_start_time: time | None = None
+    slot_end_time: time | None = None
 
     class Config:
         from_attributes = True
