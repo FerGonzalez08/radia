@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.auth_client import get_user
+from app.core.auth_client import get_user, list_users_internal
 from app.core.config import MENTEE_ROLE_ID
 from app.core.database import get_db
 from app.core.deps import get_current_session, require_mentor
@@ -152,16 +152,46 @@ async def request_mentorship(
 
 # --- RQF-029: respuesta a solicitudes pendientes ---
 
+async def _to_out(db: Session, mentorships: list[Mentorship]) -> list[MentorshipOut]:
+    """Completa cada mentoría con el nombre de las dos personas y el horario del bloque,
+    para que el frontend no dependa de datos guardados en el navegador."""
+    if not mentorships:
+        return []
+
+    try:
+        names = {u["id"]: u["nombre"] for u in await list_users_internal()}
+    except Exception:
+        names = {}  # Si Auth no responde, la lista se entrega igual, sin nombres.
+
+    slot_ids = {m.availability_slot_id for m in mentorships}
+    slots = {s.id: s for s in db.query(AvailabilitySlot).filter(AvailabilitySlot.id.in_(slot_ids)).all()}
+
+    result = []
+    for m in mentorships:
+        out = MentorshipOut.model_validate(m)
+        out.student_nombre = names.get(str(m.student_user_id))
+        out.mentor_nombre = names.get(str(m.mentor_user_id))
+        slot = slots.get(m.availability_slot_id)
+        if slot is not None:
+            out.slot_date = slot.date
+            out.slot_start_time = slot.start_time
+            out.slot_end_time = slot.end_time
+        result.append(out)
+    return result
+
+
 @router.get("/mentors/me/mentorships", response_model=list[MentorshipOut])
-def list_my_mentor_requests(db: Session = Depends(get_db), session: dict = Depends(require_mentor)):
+async def list_my_mentor_requests(db: Session = Depends(get_db), session: dict = Depends(require_mentor)):
     mentor_id = uuid.UUID(session["user_id"])
-    return db.query(Mentorship).filter(Mentorship.mentor_user_id == mentor_id).order_by(Mentorship.created_at.desc()).all()
+    rows = db.query(Mentorship).filter(Mentorship.mentor_user_id == mentor_id).order_by(Mentorship.created_at.desc()).all()
+    return await _to_out(db, rows)
 
 
 @router.get("/students/me/mentorships", response_model=list[MentorshipOut])
-def list_my_student_requests(db: Session = Depends(get_db), session: dict = Depends(get_current_session)):
+async def list_my_student_requests(db: Session = Depends(get_db), session: dict = Depends(get_current_session)):
     student_id = uuid.UUID(session["user_id"])
-    return db.query(Mentorship).filter(Mentorship.student_user_id == student_id).order_by(Mentorship.created_at.desc()).all()
+    rows = db.query(Mentorship).filter(Mentorship.student_user_id == student_id).order_by(Mentorship.created_at.desc()).all()
+    return await _to_out(db, rows)
 
 
 @router.post("/mentorships/{mentorship_id}/accept", response_model=MentorshipOut)
