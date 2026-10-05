@@ -92,6 +92,13 @@ def delete_availability_slot(
     if linked_mentorship is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "No puedes eliminar un bloque con una mentoría activa")
 
+    # Las solicitudes canceladas o rechazadas de este bloque son solo historial de intentos fallidos;
+    # se descartan para que la clave foránea no impida borrar el bloque.
+    db.query(Mentorship).filter(
+        Mentorship.availability_slot_id == slot_id,
+        Mentorship.status.in_(["cancelada", "rechazada"]),
+    ).delete(synchronize_session=False)
+
     db.delete(slot)
     db.commit()
     return None

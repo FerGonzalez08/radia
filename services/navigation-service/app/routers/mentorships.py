@@ -121,6 +121,13 @@ async def request_mentorship(
     will_auto_confirm = settings_row.auto_accept
     new_status = "confirmada" if will_auto_confirm else "pendiente"
 
+    # Un bloque liberado por una cancelación o un rechazo conserva la fila de la solicitud anterior,
+    # y availability_slot_id es único: se descarta para que el bloque pueda volver a reservarse.
+    db.query(Mentorship).filter(
+        Mentorship.availability_slot_id == slot.id,
+        Mentorship.status.in_(["cancelada", "rechazada"]),
+    ).delete(synchronize_session=False)
+
     mentorship = Mentorship(
         student_user_id=student_id,
         mentor_user_id=slot.mentor_user_id,
