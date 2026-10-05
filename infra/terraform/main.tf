@@ -200,12 +200,13 @@ resource "azurerm_linux_web_app" "app" {
   tags                    = var.tags
 
   site_config {
-    always_on           = true
-    health_check_path   = local.apps[each.key].health
-    websockets_enabled  = local.apps[each.key].websockets
-    ftps_state          = "Disabled"
-    http2_enabled       = true
-    minimum_tls_version = "1.2"
+    always_on                         = true
+    health_check_path                 = local.apps[each.key].health
+    health_check_eviction_time_in_min = 5
+    websockets_enabled                = local.apps[each.key].websockets
+    ftps_state                        = "Disabled"
+    http2_enabled                     = true
+    minimum_tls_version               = "1.2"
 
     application_stack {
       docker_image_name        = "${local.apps[each.key].image}:${var.image_tag}"
