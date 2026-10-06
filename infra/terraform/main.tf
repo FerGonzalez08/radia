@@ -216,7 +216,7 @@ resource "azurerm_linux_web_app" "app" {
     }
   }
 
-  app_settings = local.apps[each.key].settings
+  app_settings = merge(local.apps[each.key].settings, local.email_settings_by_app[each.key])
 
   depends_on = [
     azurerm_postgresql_flexible_server_database.db,

@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     RESEND_SENDER_EMAIL: str
     FRONTEND_URL: str
 
+    # Proveedor de correo: "resend" (por defecto, desarrollo local) o "acs" (Azure Communication Services).
+    EMAIL_PROVIDER: str = "resend"
+    ACS_CONNECTION_STRING: str = ""
+    ACS_SENDER_ADDRESS: str = ""
+
     FRONTEND_ORIGINS: str = "http://localhost:5173"
 
 
