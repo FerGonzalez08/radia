@@ -12,6 +12,7 @@ import type {
   MentorSettings,
 } from "../types";
 import { createApiClient } from "./httpClient";
+import { cacheMentorshipSlot, cachePeerName } from "./peerNameCache";
 
 const API_URL = (import.meta.env.VITE_NAV_API_URL ?? "http://localhost:8003").replace(/\/$/, "");
 const { request, authHeaders } = createApiClient(API_URL);
@@ -47,6 +48,11 @@ interface MentorshipOut {
   status: Mentorship["estado"];
   created_at: string;
   confirmed_at: string | null;
+  student_nombre?: string | null;
+  mentor_nombre?: string | null;
+  slot_date?: string | null;
+  slot_start_time?: string | null;
+  slot_end_time?: string | null;
 }
 
 interface MentorSettingsOut {
@@ -68,6 +74,13 @@ function mapSlot(s: AvailabilitySlotOut): AvailabilitySlot {
 }
 
 function mapMentorship(m: MentorshipOut): Mentorship {
+  // El backend ya trae nombres y horario: se guardan en la caché que usan las pantallas,
+  // así se ven bien también en un navegador o sesión nueva.
+  if (m.student_nombre) cachePeerName(m.student_user_id, m.student_nombre);
+  if (m.mentor_nombre) cachePeerName(m.mentor_user_id, m.mentor_nombre);
+  if (m.slot_date && m.slot_start_time && m.slot_end_time) {
+    cacheMentorshipSlot(m.id, { fecha: m.slot_date, horaInicio: m.slot_start_time, horaFin: m.slot_end_time });
+  }
   return {
     id: m.id,
     estudianteId: m.student_user_id,

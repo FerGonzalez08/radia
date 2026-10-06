@@ -1,0 +1,8 @@
+# Copia este archivo como terraform.tfvars (está en .gitignore) y completa los valores.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+prefix          = "radia"
+location        = "eastus2"
+# postgres_location = "centralus"   # solo si location está restringida para PostgreSQL
+plan_sku        = "B2"
+resend_api_key  = "re_xxxxxxxxxxxx"
+allowed_ip      = ""                # tu IP pública si necesitas psql o pg_dump

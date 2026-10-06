@@ -263,7 +263,12 @@ def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(
             expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
         ))
         db.commit()
-        send_password_reset_email(user.email, reset_plain)
+        try:
+            send_password_reset_email(user.email, reset_plain)
+        except Exception:
+            # El error ya queda en el log. La respuesta debe ser la misma exista o no el correo
+            # y aunque falle el envío (si no, un 500 revelaría qué cuentas existen).
+            pass
 
     # Responde 204 exista o no el email — evita filtrar qué correos están registrados.
     return None

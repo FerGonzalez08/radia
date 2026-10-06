@@ -21,6 +21,7 @@ services:
     build:
       context: ./services/auth-service
     container_name: radia-auth-service
+    command: sh -c "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     restart: unless-stopped
     env_file:
       - ./services/auth-service/.env
@@ -54,6 +55,7 @@ services:
     build:
       context: ./services/role-service
     container_name: radia-role-service
+    command: sh -c "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     restart: unless-stopped
     env_file:
       - ./services/role-service/.env
@@ -89,6 +91,7 @@ services:
     build:
       context: ./services/navigation-service
     container_name: radia-navigation-service
+    command: sh -c "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     restart: unless-stopped
     env_file:
       - ./services/navigation-service/.env
@@ -124,6 +127,7 @@ services:
     build:
       context: ./services/chat-service
     container_name: radia-chat-service
+    command: sh -c "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     restart: unless-stopped
     env_file:
       - ./services/chat-service/.env
