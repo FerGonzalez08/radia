@@ -19,10 +19,10 @@ done
 echo
 echo "== PostgreSQL Flexible Server (Burstable B1ms) por región"
 for r in "${REGIONES[@]}"; do
-  salida=$(az postgres flexible-server list-skus --location "$r" -o tsv 2>&1 || true)
-  if echo "$salida" | grep -qi "restricted"; then
+  salida=$(az postgres flexible-server list-skus --location "$r" -o json 2>&1 || true)
+  if [[ "${salida,,}" == *restricted* ]]; then
     echo "  $r: RESTRINGIDA para tu suscripción -> no la uses para PostgreSQL"
-  elif echo "$salida" | grep -q "Standard_B1ms"; then
+  elif [[ "$salida" == *Standard_B1ms* ]]; then
     echo "  $r: OK, B1ms disponible"
   else
     echo "  $r: revisar la salida de az:"; echo "$salida" | head -3 | sed 's/^/     /'
