@@ -143,8 +143,43 @@ services:
     volumes:
       - ./services/chat-service/app:/app/app
 
+  # Agente de orientación académica (IA). Viene del repo
+  # MiguelRamos00/Proyecto-de-grado; lo consume el frontend directamente por
+  # HTTP (POST /api/v1/conversaciones), sin JWT ni datos personales.
+  agent-db:
+    image: postgres:16-alpine
+    container_name: radia-agent-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agent_user
+      POSTGRES_PASSWORD: agent_pass
+      POSTGRES_DB: agent_db
+    ports:
+      - "5437:5432"
+    volumes:
+      - agent_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_user -d agent_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  agent-service:
+    build:
+      context: ./services/agent-service
+    container_name: radia-agent-service
+    restart: unless-stopped
+    env_file:
+      - ./services/agent-service/.env
+    ports:
+      - "8005:8000"
+    depends_on:
+      agent-db:
+        condition: service_healthy
+
 volumes:
   auth_db_data:
   role_db_data:
   navigation_db_data:
   chat_db_data:
+  agent_db_data:

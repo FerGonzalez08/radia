@@ -10,7 +10,7 @@ la mentoría está activa.
 
 ## Arquitectura
 
-Cuatro microservicios independientes, cada uno con su propia base de datos
+Cinco microservicios independientes, cada uno con su propia base de datos
 (Postgres), comunicándose por HTTP y WebSocket:
 
 | Servicio | Puerto | Responsabilidad |
@@ -19,6 +19,7 @@ Cuatro microservicios independientes, cada uno con su propia base de datos
 | **Role Service** | 8002 | Gestión de roles: promoción y reversión estudiante ↔ mentora, auditoría de cambios |
 | **Navigation Service** | 8003 | Categorías, disponibilidad horaria, búsqueda de mentoras, agendamiento de mentorías |
 | **Chat Service** | 8004 | Mensajería en tiempo real vía WebSocket, solo entre pares con mentoría activa |
+| **Agent Service** | 8005 | Agente de orientación académica con IA (chat IA del frontend). Proviene del repo [Proyecto-de-grado](https://github.com/MiguelRamos00/Proyecto-de-grado) |
 
 ### Principios de diseño
 
@@ -49,11 +50,11 @@ cd radia
 
 Copia el `.env.example` de cada servicio a `.env` y completa los valores. La
 `INTERNAL_SERVICE_KEY` debe ser **exactamente la misma cadena** en los cuatro
-servicios, y `JWT_SECRET_KEY` se genera con
+servicios de RADIA (agent-service no la usa), y `JWT_SECRET_KEY` se genera con
 `python3 -c "import secrets; print(secrets.token_hex(32))"`.
 
 ```bash
-for s in auth-service role-service navigation-service chat-service; do
+for s in auth-service role-service navigation-service chat-service agent-service; do
   cp services/$s/.env.example services/$s/.env
 done
 ```
@@ -62,7 +63,7 @@ Levanta todo:
 
 ```bash
 docker compose up --build
-docker compose ps        # deben aparecer 8 contenedores (4 servicios + 4 bases)
+docker compose ps        # deben aparecer 10 contenedores (5 servicios + 5 bases)
 ```
 
 Cada servicio expone su documentación interactiva en `/docs`:
@@ -70,6 +71,24 @@ Cada servicio expone su documentación interactiva en `/docs`:
 - Role: http://localhost:8002/docs
 - Navigation: http://localhost:8003/docs
 - Chat (REST): http://localhost:8004/docs
+- Agente IA: http://localhost:8005/docs (salud: http://localhost:8005/api/v1/salud)
+
+### Agente de IA (agent-service)
+
+Por defecto arranca con `PROVEEDOR_IA=simulado`, que responde frases fijas por
+palabra clave: sirve para probar la integración, no para conversar. Para
+respuestas reales, en `services/agent-service/.env`:
+
+```env
+PROVEEDOR_IA=gemini
+MODELO_IA=gemini-2.5-flash
+CLAVE_API_IA=<clave de https://aistudio.google.com/apikey>
+```
+
+y luego `docker compose up -d --force-recreate agent-service`. El frontend lo
+consume en `/app/orientacion` y en la burbuja flotante; no recibe JWT ni datos
+personales (el `sesion_id` es un UUID generado en el navegador). Cada mensaje
+se responde por separado: el agente no guarda historial de la conversación.
 
 ### Crear el primer administrador
 
@@ -95,7 +114,7 @@ React + TypeScript + Vite, en `frontend/`.
 
 ```bash
 cd frontend
-cp .env.example .env     # URLs de los 4 servicios (puertos 8001 a 8004)
+cp .env.example .env     # URLs de los 5 servicios (puertos 8001 a 8005)
 npm install
 npm run dev              # http://localhost:5173
 ```
@@ -137,7 +156,8 @@ radia/
     ├── auth-service/
     ├── role-service/
     ├── navigation-service/
-    └── chat-service/
+    ├── chat-service/
+    └── agent-service/        # agente IA (arquitectura hexagonal propia, ver abajo)
 ```
 
 Cada servicio sigue la misma estructura interna:
@@ -151,6 +171,9 @@ app/
 └── main.py
 alembic/        # migraciones
 ```
+
+`agent-service` conserva la estructura hexagonal de su repo de origen
+(`dominios/`, `aplicacion/`, `puertos/`, `adaptadores/`, `infraestructura/`).
 
 ## Stack técnico
 

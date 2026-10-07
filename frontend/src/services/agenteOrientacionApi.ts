@@ -1,12 +1,13 @@
 // Cliente HTTP del agente de orientación académica (microservicio de IA del
-// repo MiguelRamos00/Proyecto-de-grado, FastAPI, puerto 8000 en local).
+// repo MiguelRamos00/Proyecto-de-grado, integrado como services/agent-service,
+// FastAPI, puerto 8005 en local).
 //
 // Contrato acordado (docs/desarrollo/integracion-radia.md de ese repo):
 // - Solo POST /api/v1/conversaciones, sin JWT ni datos personales.
 // - `sesion_id` es un UUID técnico generado en el navegador, nunca el id del
 //   usuario. El CORS del agente solo admite la cabecera Content-Type, así que
 //   aquí NO se usa httpClient (que agrega Authorization).
-const API_URL = (import.meta.env.VITE_AGENTE_ORIENTACION_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+const API_URL = (import.meta.env.VITE_AGENTE_ORIENTACION_API_URL ?? "http://localhost:8005").replace(/\/$/, "");
 
 export type TipoRespuestaAgente = "orientacion" | "fuera_de_alcance" | "sin_contexto_suficiente";
 
@@ -41,7 +42,7 @@ export class AgenteOrientacionError extends Error {
 
 function mensajeDeError(status: number, detail: unknown): string {
   if (status === 0) {
-    return "No se pudo conectar con el agente de orientación. Verifica que su servicio esté encendido (puerto 8000).";
+    return "No se pudo conectar con el agente de orientación. Verifica que su servicio esté encendido (agent-service, puerto 8005).";
   }
   if (status === 422) return "El mensaje no es válido. Escribe entre 1 y 1000 caracteres.";
   if (status === 404) return "No se encontró el diagnóstico asociado a esta conversación.";
