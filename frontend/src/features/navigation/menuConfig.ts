@@ -33,9 +33,11 @@ export interface MenuItem {
   disabled?: boolean;
 }
 
+/** Agente de IA de orientación académica (microservicio externo), para todos los roles. */
+const AI_ITEM: MenuItem = { path: "/app/orientacion", label: "Orientación académica (IA)", icon: Bot };
+
 /** Módulos futuros, visibles para cualquier rol autenticado. */
 const UPCOMING_ITEMS: MenuItem[] = [
-  { path: "/app/chatbot", label: "Chatbot IA", icon: Bot, disabled: true },
   { path: "/app/foro", label: "Foro", icon: Megaphone, disabled: true },
   { path: "/app/cursos", label: "Cursos", icon: BookOpen, disabled: true },
 ];
@@ -46,6 +48,7 @@ const MENUS: Record<Role, MenuItem[]> = {
     { path: "/app/mentores", label: "Buscar mentor", icon: Search },
     { path: "/app/mis-mentorias", label: "Mis mentorías", icon: CalendarClock },
     { path: "/app/chat", label: "Chat con mi mentor", icon: MessagesSquare, matchPrefixes: ["/app/chat"] },
+    AI_ITEM,
     { path: "/app/perfil", label: "Mi perfil", icon: User },
     ...UPCOMING_ITEMS,
   ],
@@ -54,6 +57,7 @@ const MENUS: Record<Role, MenuItem[]> = {
     { path: "/app/disponibilidad", label: "Mi disponibilidad", icon: CalendarClock },
     { path: "/app/solicitudes", label: "Solicitudes", icon: Inbox },
     { path: "/app/chat", label: "Mis mentees", icon: MessagesSquare, matchPrefixes: ["/app/chat"] },
+    AI_ITEM,
     { path: "/app/perfil", label: "Mi perfil", icon: User },
     ...UPCOMING_ITEMS,
   ],
@@ -63,6 +67,7 @@ const MENUS: Record<Role, MenuItem[]> = {
     { path: "/app/categorias", label: "Categorías", icon: Tag },
     { path: "/app/chat", label: "Chat", icon: MessagesSquare, matchPrefixes: ["/app/chat"] },
     { path: "/app/permisos", label: "Permisos por rol", icon: ShieldCheck },
+    AI_ITEM,
     { path: "/app/perfil", label: "Mi perfil", icon: User },
     ...UPCOMING_ITEMS,
   ],

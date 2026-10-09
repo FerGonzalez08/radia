@@ -23,7 +23,10 @@
   position: fixed;
   right: var(--space-6);
   bottom: calc(var(--space-6) + 68px);
-  width: min(86vw, 300px);
+  width: min(92vw, 380px);
+  height: min(72vh, 560px);
+  display: flex;
+  flex-direction: column;
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -50,8 +53,20 @@
   font-size: 13.5px;
 }
 
+.panelActions {
+  display: flex;
+  gap: 6px;
+}
+
+.panelChat {
+  flex: 1;
+  min-height: 0;
+}
+
 .panelClose {
   display: grid;
+  color: #fff;
+  text-decoration: none;
   place-items: center;
   width: 26px;
   height: 26px;
@@ -65,40 +80,9 @@
   background: rgba(255, 255, 255, 0.18);
 }
 
-.panelBody {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--space-3);
-  padding: var(--space-6) var(--space-5);
-}
 
-.panelIcon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  background: var(--radia-gradient-soft);
-  color: var(--color-primary-strong);
-}
 
-.panelText {
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
 
-.panelBadge {
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  background: var(--radia-gradient-soft);
-  color: var(--color-primary-strong);
-}
 
 @media (max-width: 480px) {
   .fab {
