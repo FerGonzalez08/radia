@@ -16,7 +16,7 @@ SHA=$(git rev-parse --short HEAD)
 echo "== Iniciando sesión en $LOGIN"
 az acr login --name "$ACR_NAME"
 
-for svc in auth role navigation chat; do
+for svc in auth role navigation chat agent; do
   echo "== $svc-service"
   docker build -t "$LOGIN/$svc-service:latest" -t "$LOGIN/$svc-service:$SHA" "services/$svc-service"
   docker push "$LOGIN/$svc-service:latest"
@@ -30,6 +30,7 @@ docker build -t "$LOGIN/frontend:latest" -t "$LOGIN/frontend:$SHA" \
   --build-arg "VITE_ROLE_API_URL=$(arg VITE_ROLE_API_URL)" \
   --build-arg "VITE_NAV_API_URL=$(arg VITE_NAV_API_URL)" \
   --build-arg "VITE_CHAT_API_URL=$(arg VITE_CHAT_API_URL)" \
+  --build-arg "VITE_AGENTE_ORIENTACION_API_URL=$(arg VITE_AGENTE_ORIENTACION_API_URL)" \
   frontend
 docker push "$LOGIN/frontend:latest"
 docker push "$LOGIN/frontend:$SHA"

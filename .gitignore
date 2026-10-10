@@ -28,3 +28,6 @@ dist/
 
 # Respaldos de bases de datos
 backups/
+
+# Marcadores de descarga de Windows
+*:Zone.Identifier
