@@ -25,6 +25,10 @@ for svc in auth role navigation chat; do
   verificar "$svc /docs" "$base/docs"
 done
 
+agent=$(echo "$URLS" | python3 -c "import sys, json; print(json.load(sys.stdin)['agent'])")
+verificar "agent /api/v1/salud" "$agent/api/v1/salud"
+verificar "agent /docs" "$agent/docs"
+
 front=$(echo "$URLS" | python3 -c "import sys, json; print(json.load(sys.stdin)['frontend'])")
 verificar "frontend /" "$front/"
 verificar "frontend /app/chat (fallback de SPA)" "$front/app/chat"
