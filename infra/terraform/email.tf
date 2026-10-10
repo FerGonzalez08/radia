@@ -56,6 +56,7 @@ locals {
     navigation = local.email_settings
     role       = tomap({})
     chat       = tomap({})
+    agent      = tomap({})
     frontend   = tomap({})
   }
 }

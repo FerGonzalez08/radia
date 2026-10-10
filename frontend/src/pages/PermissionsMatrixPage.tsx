@@ -31,6 +31,7 @@ const ROWS: Row[] = [
   { descripcion: "Cancelar una mentoría propia", mentee: true, mentor: true, admin: false },
   { descripcion: "Ver el historial de una conversación propia", mentee: true, mentor: true, admin: false },
   { descripcion: "Enviar y recibir mensajes en tiempo real", mentee: true, mentor: true, admin: false },
+  { descripcion: "Conversar con el agente de orientación académica (IA)", mentee: true, mentor: true, admin: true },
 ];
 
 function Cell({ allowed }: { allowed: boolean }) {

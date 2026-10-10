@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_NAV_API_URL?: string;
   /** URL base de chat-service (también se deriva de aquí la URL del websocket). */
   readonly VITE_CHAT_API_URL?: string;
+  /** URL base del agente de orientación académica (IA, repo Proyecto-de-grado). */
+  readonly VITE_AGENTE_ORIENTACION_API_URL?: string;
 }
 
 interface ImportMeta {

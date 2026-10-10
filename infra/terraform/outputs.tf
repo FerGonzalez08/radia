@@ -25,10 +25,11 @@ output "frontend_url" {
 # Las URLs de los backends se fijan en el bundle del frontend en el momento del build.
 output "frontend_build_args" {
   value = {
-    VITE_API_URL      = local.urls["auth"]
-    VITE_ROLE_API_URL = local.urls["role"]
-    VITE_NAV_API_URL  = local.urls["navigation"]
-    VITE_CHAT_API_URL = local.urls["chat"]
+    VITE_API_URL                    = local.urls["auth"]
+    VITE_ROLE_API_URL               = local.urls["role"]
+    VITE_NAV_API_URL                = local.urls["navigation"]
+    VITE_CHAT_API_URL               = local.urls["chat"]
+    VITE_AGENTE_ORIENTACION_API_URL = local.urls["agent"]
   }
 }
 

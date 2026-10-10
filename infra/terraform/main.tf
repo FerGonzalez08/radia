@@ -31,7 +31,7 @@ locals {
   pg_location = coalesce(var.postgres_location, var.location)
   pg_admin    = "radiaadmin"
 
-  app_names = ["auth", "role", "navigation", "chat", "frontend"]
+  app_names = ["auth", "role", "navigation", "chat", "agent", "frontend"]
 
   # Los nombres se calculan sin referenciar los recursos para romper el ciclo:
   # los backends necesitan la URL del frontend (CORS) y el frontend necesita
@@ -45,11 +45,13 @@ locals {
     role       = "role_db"
     navigation = "navigation_db"
     chat       = "chat_db"
+    agent      = "agent_db"
   }
 
   db_urls = {
     for svc, db in local.databases :
-    svc => "postgresql://${local.pg_admin}:${random_password.postgres_admin.result}@${azurerm_postgresql_flexible_server.pg.fqdn}:5432/${db}?sslmode=require"
+    # El agente usa psycopg 3, que exige el esquema postgresql+psycopg.
+    svc => "${svc == "agent" ? "postgresql+psycopg" : "postgresql"}://${local.pg_admin}:${random_password.postgres_admin.result}@${azurerm_postgresql_flexible_server.pg.fqdn}:5432/${db}?sslmode=require"
   }
 
   backend_common = {
@@ -103,6 +105,20 @@ locals {
         AUTH_SERVICE_URL       = local.urls["auth"]
         NAVIGATION_SERVICE_URL = local.urls["navigation"]
       })
+    }
+    agent = {
+      image      = "agent-service"
+      health     = "/api/v1/salud"
+      websockets = false
+      settings = {
+        WEBSITES_PORT                       = "8000"
+        WEBSITES_ENABLE_APP_SERVICE_STORAGE = "false"
+        DATABASE_URL                        = local.db_urls["agent"]
+        ORIGENES_CORS                       = local.urls["frontend"]
+        PROVEEDOR_IA                        = var.agent_provider
+        MODELO_IA                           = var.agent_model
+        CLAVE_API_IA                        = var.agent_api_key
+      }
     }
     frontend = {
       image      = "frontend"
