@@ -22,6 +22,10 @@ const mapAuthError: ErrorMapper = (status, detail) => {
     return new ApiError("Correo o contraseña incorrectos.", { code: "INVALID_CREDENTIALS" });
   }
 
+  if (status === 400 && text === "Invalid or expired reset token") {
+    return new ApiError("Este enlace ha expirado o ya fue utilizado. Solicita uno nuevo.", { code: "RESET_LINK_EXPIRED" });
+  }
+
   if (status === 403) {
     if (text === "Email not verified") {
       return new ApiError("Debes verificar tu cuenta antes de iniciar sesión.", { code: "NOT_VERIFIED" });
