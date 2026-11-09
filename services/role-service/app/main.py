@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import ADMIN_ROLE_ID, MENTEE_ROLE_ID, MENTOR_ROLE_ID, settings
 from app.core.database import Base, SessionLocal, engine
+from app.core.request_id import RequestIdMiddleware
 from app.models.role import Role
 from app.routers import roles
 
@@ -18,6 +19,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestIdMiddleware)  # el último que se agrega es el más externo: envuelve también las respuestas de error
 
 app.include_router(roles.router)
 

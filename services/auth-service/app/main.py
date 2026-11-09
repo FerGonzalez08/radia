@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.request_id import RequestIdMiddleware
 from app.core.database import Base, engine
 from app.core.retention import purge_loop
 from app.routers import auth, internal
@@ -33,6 +34,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestIdMiddleware)  # el último que se agrega es el más externo: envuelve también las respuestas de error
 
 app.include_router(auth.router)
 app.include_router(internal.router)

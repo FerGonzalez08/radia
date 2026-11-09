@@ -2,6 +2,7 @@ import httpx
 from fastapi import HTTPException, status
 
 from app.core.config import settings
+from app.core.request_id import HEADER as REQUEST_ID_HEADER, request_id_var
 
 TIMEOUT_S = 5.0
 AUTH_NO_DISPONIBLE = "El servicio de autenticación no está disponible. Intenta de nuevo en unos segundos."
@@ -9,6 +10,8 @@ AUTH_NO_DISPONIBLE = "El servicio de autenticación no está disponible. Intenta
 
 async def _enviar(metodo: str, url: str, mensaje: str, **kwargs) -> httpx.Response:
     """Llama a otro servicio; si no responde (caído, sin red o sin tiempo) devuelve 503 en lugar de un 500 sin controlar."""
+    # Se reenvía el X-Request-ID de la petición en curso para correlacionar la operación entre servicios (TC-NFR-10).
+    kwargs["headers"] = {**kwargs.get("headers", {}), REQUEST_ID_HEADER: request_id_var.get()}
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT_S) as client:
             return await client.request(metodo, url, **kwargs)
