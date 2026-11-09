@@ -2,6 +2,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.auth_client import get_user, list_users_internal
@@ -31,6 +32,24 @@ def _get_or_create_settings(db: Session, mentor_id: uuid.UUID) -> MentorSettings
         db.commit()
         db.refresh(settings_row)
     return settings_row
+
+
+def _lock_settings(db: Session, mentor_id: uuid.UUID) -> MentorSettings:
+    """Configuración de la mentora con bloqueo de fila (SELECT ... FOR UPDATE) hasta el commit o rollback.
+
+    Serializa, por mentora, la comprobación del límite semanal y la creación o confirmación de mentorías: sin el bloqueo
+    dos solicitudes simultáneas (incluso en instancias distintas) leen el mismo conteo y superan el límite (ASR-27).
+    """
+    query = db.query(MentorSettings).filter(MentorSettings.mentor_user_id == mentor_id).with_for_update()
+    row = query.first()
+    if row is None:
+        try:
+            db.add(MentorSettings(mentor_user_id=mentor_id, auto_accept=False, weekly_limit=5))
+            db.commit()
+        except IntegrityError:
+            db.rollback()  # otra solicitud la creó al mismo tiempo
+        row = query.first()
+    return row
 
 
 def _week_bounds(target_date: date) -> tuple[date, date]:
@@ -112,10 +131,18 @@ async def request_mentorship(
     slot = db.query(AvailabilitySlot).filter(AvailabilitySlot.id == payload.availability_slot_id).first()
     if slot is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Bloque de disponibilidad no encontrado")
+
+    # Orden de bloqueo fijo (mentora, luego bloque) para evitar interbloqueos entre solicitudes simultáneas (ASR-26/27).
+    settings_row = _lock_settings(db, slot.mentor_user_id)
+    slot = (
+        db.query(AvailabilitySlot).filter(AvailabilitySlot.id == payload.availability_slot_id)
+        .with_for_update().populate_existing().first()
+    )
+    if slot is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bloque de disponibilidad no encontrado")
     if slot.status != "libre":
         raise HTTPException(status.HTTP_409_CONFLICT, "Este bloque ya no está disponible")
 
-    settings_row = _get_or_create_settings(db, slot.mentor_user_id)
     confirmed_count = _confirmed_count_in_week(db, slot.mentor_user_id, slot.date)
 
     if confirmed_count >= settings_row.weekly_limit:
@@ -144,7 +171,12 @@ async def request_mentorship(
     # evita que dos estudiantes soliciten el mismo horario mientras se decide.
     slot.status = "reservado"
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Red de seguridad: si aun así otra solicitud tomó el bloque, es un conflicto (409), no un error del servidor.
+        db.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este bloque ya no está disponible")
     db.refresh(mentorship)
 
     if will_auto_confirm:
@@ -207,16 +239,16 @@ async def accept_mentorship(
 ):
     """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
+    settings_row = _lock_settings(db, mentor_id)  # serializa el conteo del límite semanal (ASR-27)
     mentorship = db.query(Mentorship).filter(
         Mentorship.id == mentorship_id, Mentorship.mentor_user_id == mentor_id
-    ).first()
+    ).with_for_update().populate_existing().first()
     if mentorship is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Solicitud no encontrada")
     if mentorship.status != "pendiente":
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Esta solicitud ya fue resuelta")
 
     slot = db.query(AvailabilitySlot).filter(AvailabilitySlot.id == mentorship.availability_slot_id).first()
-    settings_row = _get_or_create_settings(db, mentor_id)
 
     if _confirmed_count_in_week(db, mentor_id, slot.date) >= settings_row.weekly_limit:
         raise HTTPException(status.HTTP_409_CONFLICT, "Aceptar esta solicitud superaría tu límite semanal")

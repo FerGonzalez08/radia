@@ -251,3 +251,39 @@ def test_confirmar_no_falla_si_alguna_de_las_dos_personas_ya_no_existe(client, f
     r = client.post(f"/mentorships/{m.id}/accept", headers=mentor.headers)
     assert r.status_code == 200 and r.json()["status"] == "confirmada"
     assert emails == []
+
+
+# --- Concurrencia (ASR-26 y ASR-27) ---
+
+def _en_paralelo(tareas):
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=len(tareas)) as pool:
+        return [f.result() for f in [pool.submit(t) for t in tareas]]
+
+
+def test_solicitudes_simultaneas_del_mismo_bloque_dejan_una_sola_mentoria(client, db, fake_auth, mentor, make_slot):
+    """TC-CON-26: una gana (201) y las demás reciben 409; ninguna recibe 500."""
+    from app.core.config import MENTEE_ROLE_ID
+    slot = make_slot(mentor.id)
+    estudiantes = [fake_auth.login_as(fake_auth.add_user(MENTEE_ROLE_ID)) for _ in range(8)]
+    codigos = _en_paralelo([
+        (lambda h=h: client.post("/mentorships", headers=h, json={"availability_slot_id": str(slot.id)}).status_code)
+        for h in estudiantes
+    ])
+    assert sorted(codigos) == [201] + [409] * 7
+    assert db.query(Mentorship).filter(Mentorship.availability_slot_id == slot.id).count() == 1
+
+
+def test_solicitudes_simultaneas_no_superan_el_limite_semanal(client, db, fake_auth, mentor, make_slot):
+    """TC-CON-27: con aceptación automática y límite 5, 12 bloques de la misma semana pedidos a la vez dan 5 confirmadas."""
+    from datetime import time
+    from app.core.config import MENTEE_ROLE_ID
+    client.put("/mentors/me/settings", headers=mentor.headers, json={"auto_accept": True})
+    slots = [make_slot(mentor.id, inicio=time(h, 0), fin=time(h, 30)) for h in range(6, 18)]
+    estudiantes = [fake_auth.login_as(fake_auth.add_user(MENTEE_ROLE_ID)) for _ in slots]
+    codigos = _en_paralelo([
+        (lambda h=h, sl=sl: client.post("/mentorships", headers=h, json={"availability_slot_id": str(sl.id)}).status_code)
+        for h, sl in zip(estudiantes, slots)
+    ])
+    assert codigos.count(201) == 5 and codigos.count(409) == 7 and 500 not in codigos
+    assert db.query(Mentorship).filter(Mentorship.status == "confirmada").count() == 5
