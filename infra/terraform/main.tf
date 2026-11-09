@@ -80,8 +80,9 @@ locals {
       health     = "/health"
       websockets = false
       settings = merge(local.backend_common, {
-        DATABASE_URL     = local.db_urls["role"]
-        AUTH_SERVICE_URL = local.urls["auth"]
+        DATABASE_URL           = local.db_urls["role"]
+        AUTH_SERVICE_URL       = local.urls["auth"]
+        NAVIGATION_SERVICE_URL = local.urls["navigation"]
       })
     }
     navigation = {

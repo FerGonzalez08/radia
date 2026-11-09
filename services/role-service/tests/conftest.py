@@ -38,6 +38,7 @@ class FakeAuth:
         self.users: dict[str, dict] = {}
         self.sessions: dict[str, dict] = {}
         self.down = False
+        self.cancelled_mentors: list[str] = []
         self.role_updates: list[tuple[str, str]] = []
 
     def add_user(self, role_id, nombre="Persona", email=None, active=True, verified=True) -> dict:
@@ -62,6 +63,9 @@ class FakeAuth:
             return httpx.Response(200, json=session) if session else httpx.Response(401, json={"detail": "x"})
         if request.headers.get("x-internal-service-key") != "clave-interna-pruebas":
             return httpx.Response(403, json={"detail": "Invalid internal service key"})
+        if path.startswith("/internal/mentors/") and path.endswith("/cancel-mentorships") and request.method == "POST":
+            self.cancelled_mentors.append(path.split("/")[3])
+            return httpx.Response(200, json={"cancelled": 1})
         if path == "/internal/users" and request.method == "GET":
             return httpx.Response(200, json=list(self.users.values()))
         if path.startswith("/internal/users/") and path.endswith("/role") and request.method == "PATCH":

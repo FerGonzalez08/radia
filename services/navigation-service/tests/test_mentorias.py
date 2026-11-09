@@ -303,3 +303,26 @@ def test_la_mentora_puede_cambiar_su_limite_semanal(client, mentor):
 def test_limite_semanal_fuera_de_rango_se_rechaza(client, mentor, limite):
     r = client.put("/mentors/me/settings", headers=mentor.headers, json={"auto_accept": False, "weekly_limit": limite})
     assert r.status_code == 422
+
+
+def test_cancelar_las_mentorias_de_una_mentora_libera_los_bloques(client, db, mentee, mentee2, mentor, make_slot, make_mentorship):
+    """TC-ROL-04 (lado Navigation): pendientes y confirmadas pasan a canceladas, los bloques quedan libres y el chat se bloquea."""
+    from tests.conftest import KEY
+    s1 = make_slot(mentor.id, inicio=time(9, 0), fin=time(10, 0))
+    s2 = make_slot(mentor.id, inicio=time(11, 0), fin=time(12, 0))
+    m1 = make_mentorship(mentee.id, mentor.id, s1, status="confirmada")
+    m2 = make_mentorship(mentee2.id, mentor.id, s2, status="pendiente")
+
+    r = client.post(f"/internal/mentors/{mentor.id}/cancel-mentorships", headers=KEY)
+    assert r.status_code == 200 and r.json() == {"cancelled": 2}
+    db.expire_all()
+    assert {db.get(Mentorship, m1.id).status, db.get(Mentorship, m2.id).status} == {"cancelada"}
+    assert {db.get(AvailabilitySlot, s1.id).status, db.get(AvailabilitySlot, s2.id).status} == {"libre"}
+    activa = client.get("/internal/mentorships/active", params={"user_a": str(mentee.id), "user_b": str(mentor.id)}, headers=KEY)
+    assert activa.json()["active"] is False
+    assert client.post(f"/internal/mentors/{mentor.id}/cancel-mentorships", headers=KEY).json() == {"cancelled": 0}
+
+
+def test_cancelar_mentorias_de_una_mentora_exige_la_llave_interna(client, mentor):
+    assert client.post(f"/internal/mentors/{mentor.id}/cancel-mentorships").status_code == 422
+    assert client.post(f"/internal/mentors/{mentor.id}/cancel-mentorships", headers={"X-Internal-Service-Key": "mala"}).status_code == 403

@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     AUTH_SERVICE_URL: str
     INTERNAL_SERVICE_KEY: str
+    # Opcional: sin ella, al revertir una mentora no se cancelan sus mentorías (el cambio de rol sí se aplica).
+    NAVIGATION_SERVICE_URL: str = ""
     FRONTEND_ORIGINS: str = "http://localhost:5173"
 
 

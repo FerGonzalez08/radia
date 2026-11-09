@@ -16,7 +16,7 @@ def list_users_internal(
     db: Session = Depends(get_db),
     _key: None = Depends(verify_internal_key),
 ):
-    """Acceso: interno entre servicios (cabecera X-Internal-Key); no es para usuarias finales."""
+    """Acceso: interno entre servicios (cabecera X-Internal-Service-Key); no es para usuarias finales."""
     return db.query(User).order_by(User.created_at.desc()).all()
 
 
@@ -27,7 +27,7 @@ def update_user_role_internal(
     db: Session = Depends(get_db),
     _key: None = Depends(verify_internal_key),
 ):
-    """Acceso: interno entre servicios (cabecera X-Internal-Key); no es para usuarias finales."""
+    """Acceso: interno entre servicios (cabecera X-Internal-Service-Key); no es para usuarias finales."""
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")

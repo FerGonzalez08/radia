@@ -329,7 +329,7 @@ def check_active_mentorship(
     db: Session = Depends(get_db),
     _key: None = Depends(verify_internal_key),
 ):
-    """Acceso: interno entre servicios (cabecera X-Internal-Key); no es para usuarias finales."""
+    """Acceso: interno entre servicios (cabecera X-Internal-Service-Key); no es para usuarias finales."""
     exists = db.query(Mentorship).filter(
         Mentorship.status == "confirmada",
         (
@@ -338,3 +338,27 @@ def check_active_mentorship(
         ),
     ).first() is not None
     return {"active": exists}
+
+
+@router.post("/internal/mentors/{mentor_id}/cancel-mentorships")
+def cancel_mentor_mentorships(
+    mentor_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _key: None = Depends(verify_internal_key),
+):
+    """Cancela las mentorías pendientes y confirmadas de una mentora (la usa Role Service al revertirla a estudiante).
+
+    Los bloques quedan libres y, al no haber mentoría confirmada, el chat entre las dos personas se bloquea.
+    Es idempotente: repetirla no cambia nada. Acceso: interno entre servicios (cabecera X-Internal-Service-Key).
+    """
+    rows = db.query(Mentorship).filter(
+        Mentorship.mentor_user_id == mentor_id,
+        Mentorship.status.in_(["pendiente", "confirmada"]),
+    ).all()
+    for mentorship in rows:
+        mentorship.status = "cancelada"
+        slot = db.query(AvailabilitySlot).filter(AvailabilitySlot.id == mentorship.availability_slot_id).first()
+        if slot is not None:
+            slot.status = "libre"
+    db.commit()
+    return {"cancelled": len(rows)}

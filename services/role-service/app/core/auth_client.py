@@ -49,3 +49,17 @@ async def update_user_role_internal(user_id: str, role_id: str) -> dict:
     if response.status_code != 200:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Auth Service unavailable")
     return response.json()
+
+
+async def cancel_mentor_mentorships_internal(mentor_id: str) -> int:
+    """Pide a Navigation Service cancelar las mentorías activas de la mentora. Devuelve cuántas canceló."""
+    if not settings.NAVIGATION_SERVICE_URL:
+        return 0
+    response = await _enviar(
+        "POST", f"{settings.NAVIGATION_SERVICE_URL}/internal/mentors/{mentor_id}/cancel-mentorships",
+        "El servicio de mentorías no está disponible. Intenta de nuevo en unos segundos.",
+        headers={"X-Internal-Service-Key": settings.INTERNAL_SERVICE_KEY},
+    )
+    if response.status_code != 200:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Navigation Service unavailable")
+    return response.json().get("cancelled", 0)

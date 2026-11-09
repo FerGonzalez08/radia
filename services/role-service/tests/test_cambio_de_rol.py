@@ -95,13 +95,13 @@ def test_bitacora_resuelve_nombres_correos_y_roles(client, fake_auth, admin):
     assert (entry["previous_role"], entry["new_role"]) == ("estudiante", "mentora")
 
 
-def test_bitacora_marca_usuarios_eliminados(client, fake_auth, admin):
+def test_bitacora_marca_usuarios_inexistentes_como_desactivados(client, fake_auth, admin):
     _, headers = admin
     ana = fake_auth.add_user(MENTEE_ROLE_ID, nombre="Ana")
     client.post(f"/roles/{ana['id']}/promote", headers=headers)
     del fake_auth.users[ana["id"]]
     entry = client.get("/roles/audit-log", headers=headers).json()[0]
-    assert entry["target_nombre"] == "Usuario eliminado" and entry["target_email"] == "-"
+    assert entry["target_nombre"] == "Usuario desactivado" and entry["target_email"] == "-"
 
 
 def test_bitacora_con_rol_fuera_de_catalogo_dice_desconocido(client, db, fake_auth, admin):
@@ -112,3 +112,59 @@ def test_bitacora_con_rol_fuera_de_catalogo_dice_desconocido(client, db, fake_au
     db.execute(__import__("sqlalchemy").text("UPDATE role_change_log SET new_role_id = :x"), {"x": str(uuid.uuid4())})
     db.commit()
     assert client.get("/roles/audit-log", headers=headers).json()[0]["new_role"] == "Desconocido"
+
+
+def test_bitacora_marca_usuarios_desactivados_sin_fallar(client, fake_auth, admin):
+    """TC-ROL-10: la fila aparece como «Usuario desactivado» y el listado no falla."""
+    _, headers = admin
+    ana = fake_auth.add_user(MENTEE_ROLE_ID, nombre="Ana")
+    client.post(f"/roles/{ana['id']}/promote", headers=headers)
+    fake_auth.users[ana["id"]]["is_active"] = False
+    r = client.get("/roles/audit-log", headers=headers)
+    assert r.status_code == 200 and r.json()[0]["target_nombre"] == "Usuario desactivado"
+
+
+def test_si_el_cambio_de_rol_falla_no_queda_registro_de_auditoria(client, db, fake_auth, admin, monkeypatch):
+    """TC-ROL-03 (a): el rol no cambió, por lo tanto no debe existir fila de auditoría."""
+    from app.models.role_change_log import RoleChangeLog
+    from app.routers import roles as roles_router
+    from fastapi import HTTPException
+    _, headers = admin
+    ana = fake_auth.add_user(MENTEE_ROLE_ID)
+
+    async def falla(user_id, role_id):
+        raise HTTPException(502, "Auth Service unavailable")
+    monkeypatch.setattr(roles_router, "update_user_role_internal", falla)
+    assert client.post(f"/roles/{ana['id']}/promote", headers=headers).status_code == 502
+    assert db.query(RoleChangeLog).count() == 0
+
+
+def test_si_falla_la_auditoria_se_restituye_el_rol(client, db, fake_auth, admin, monkeypatch):
+    """TC-ROL-03 (b): si no se puede guardar el registro, el rol vuelve al anterior (nunca rol cambiado sin registro)."""
+    from sqlalchemy.orm import Session
+    _, headers = admin
+    ana = fake_auth.add_user(MENTEE_ROLE_ID)
+    original = Session.commit
+
+    def commit_falla(self):
+        raise RuntimeError("fallo de base de datos")
+    monkeypatch.setattr(Session, "commit", commit_falla)
+    from fastapi.testclient import TestClient
+    from app.main import app
+    try:
+        r = TestClient(app, raise_server_exceptions=False).post(f"/roles/{ana['id']}/promote", headers=headers)
+    finally:
+        monkeypatch.setattr(Session, "commit", original)
+    assert r.status_code == 500
+    assert fake_auth.users[ana["id"]]["role_id"] == str(MENTEE_ROLE_ID)
+
+
+def test_revertir_a_una_mentora_cancela_sus_mentorias(client, fake_auth, admin, monkeypatch):
+    """TC-ROL-04: se pide a Navigation Service cancelar las mentorías de la mentora antes de cambiarle el rol."""
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "NAVIGATION_SERVICE_URL", "http://nav.test")
+    _, headers = admin
+    mentora = fake_auth.add_user(MENTOR_ROLE_ID)
+    assert client.post(f"/roles/{mentora['id']}/revert", headers=headers).status_code == 200
+    assert fake_auth.cancelled_mentors == [mentora["id"]]
+    assert fake_auth.users[mentora["id"]]["role_id"] == str(MENTEE_ROLE_ID)

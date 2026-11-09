@@ -1,10 +1,15 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.auth_client import list_users_internal, update_user_role_internal
+from app.core.auth_client import (
+    cancel_mentor_mentorships_internal,
+    list_users_internal,
+    update_user_role_internal,
+)
 from app.core.config import ADMIN_ROLE_ID, MENTEE_ROLE_ID, MENTOR_ROLE_ID
 from app.core.database import get_db
 from app.core.deps import get_current_session, require_admin
@@ -13,6 +18,7 @@ from app.models.role_change_log import RoleChangeLog
 from app.schemas.role import RoleChangeLogOut, RoleOut, UserWithRoleOut
 
 router = APIRouter(prefix="/roles", tags=["roles"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=list[RoleOut])
@@ -45,7 +51,9 @@ async def list_audit_log(db: Session = Depends(get_db), _admin: dict = Depends(r
     def user_info(user_id: uuid.UUID) -> tuple[str, str]:
         user = users_by_id.get(str(user_id))
         if user is None:
-            return "Usuario eliminado", "-"
+            return "Usuario desactivado", "-"
+        if not user.get("is_active", True):
+            return "Usuario desactivado", user["email"]
         return user["nombre"], user["email"]
 
     result = []
@@ -77,6 +85,41 @@ async def _get_target_user(user_id: uuid.UUID) -> dict:
     return target
 
 
+async def _cambiar_rol_con_auditoria(
+    db: Session, admin: dict, user_id: uuid.UUID, rol_anterior: uuid.UUID, rol_nuevo: uuid.UUID, antes=None,
+) -> dict:
+    """Cambia el rol y registra la auditoría de forma consistente (TC-ROL-03): nunca queda un rol cambiado sin su registro.
+
+    La fila de auditoría se escribe primero (sin confirmar), luego se cambia el rol en Auth Service y al final se
+    confirma. Si el cambio de rol falla, no queda registro. Si falla la confirmación, se restituye el rol anterior.
+    """
+    db.add(RoleChangeLog(
+        target_user_id=user_id,
+        admin_user_id=uuid.UUID(admin["user_id"]),
+        previous_role_id=rol_anterior,
+        new_role_id=rol_nuevo,
+        changed_at=datetime.now(timezone.utc),
+    ))
+    db.flush()
+    try:
+        if antes is not None:
+            await antes()
+        updated = await update_user_role_internal(str(user_id), str(rol_nuevo))
+    except Exception:
+        db.rollback()
+        raise
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        try:
+            await update_user_role_internal(str(user_id), str(rol_anterior))
+        except Exception:
+            logger.critical("Rol de %s cambiado sin registro de auditoría y sin poder restituirlo", user_id)
+        raise
+    return updated
+
+
 @router.post("/{user_id}/promote", response_model=UserWithRoleOut)
 async def promote_to_mentor(
     user_id: uuid.UUID,
@@ -91,18 +134,7 @@ async def promote_to_mentor(
     if target["role_id"] == str(MENTOR_ROLE_ID):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "El usuario ya es mentora")
 
-    updated = await update_user_role_internal(str(user_id), str(MENTOR_ROLE_ID))
-
-    db.add(RoleChangeLog(
-        target_user_id=user_id,
-        admin_user_id=uuid.UUID(admin["user_id"]),
-        previous_role_id=uuid.UUID(target["role_id"]),
-        new_role_id=MENTOR_ROLE_ID,
-        changed_at=datetime.now(timezone.utc),
-    ))
-    db.commit()
-
-    return updated
+    return await _cambiar_rol_con_auditoria(db, admin, user_id, uuid.UUID(target["role_id"]), MENTOR_ROLE_ID)
 
 
 @router.post("/{user_id}/revert", response_model=UserWithRoleOut)
@@ -119,22 +151,8 @@ async def revert_to_estudiante(
     if target["role_id"] != str(MENTOR_ROLE_ID):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Solo se puede revertir un usuario que actualmente es mentora")
 
-    updated = await update_user_role_internal(str(user_id), str(MENTEE_ROLE_ID))
-
-    db.add(RoleChangeLog(
-        target_user_id=user_id,
-        admin_user_id=uuid.UUID(admin["user_id"]),
-        previous_role_id=MENTOR_ROLE_ID,
-        new_role_id=MENTEE_ROLE_ID,
-        changed_at=datetime.now(timezone.utc),
-    ))
-    db.commit()
-
-    # TODO: notificar a Navigation Service para cancelar mentorías activas
-    # de este usuario. Pendiente de definir: llamada síncrona vs evento
-    # asíncrono (ver decisión arquitectónica en RQF-008). No implementado
-    # porque Navigation Service no existe todavía. Este hook se movió aquí
-    # desde Auth Service porque la lógica de negocio de reversión ahora
-    # vive en Role Service.
-
-    return updated
+    # TC-ROL-04: al revertir a una mentora se cancelan antes sus mentorías pendientes y confirmadas (el chat se bloquea).
+    return await _cambiar_rol_con_auditoria(
+        db, admin, user_id, MENTOR_ROLE_ID, MENTEE_ROLE_ID,
+        antes=lambda: cancel_mentor_mentorships_internal(str(user_id)),
+    )
