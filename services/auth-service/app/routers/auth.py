@@ -16,6 +16,7 @@ from app.core.security import (
     hash_opaque_token,
     hash_password,
     verify_password,
+    DUMMY_PASSWORD_HASH,
 )
 from app.models.login_attempt import LoginAttempt
 from app.models.refresh_token import RefreshToken
@@ -138,7 +139,9 @@ def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)):
         )
     user = db.query(User).filter(User.email == payload.email).first()
 
-    success = user is not None and verify_password(payload.password, user.password_hash)
+    # Siempre se ejecuta una verificación bcrypt, exista o no la cuenta (tiempo de respuesta uniforme).
+    password_ok = verify_password(payload.password, user.password_hash if user else DUMMY_PASSWORD_HASH)
+    success = user is not None and password_ok
 
     db.add(LoginAttempt(
         user_id=user.id if user else None,

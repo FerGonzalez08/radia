@@ -22,6 +22,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(prehashed, hashed_password.encode("utf-8"))
 
 
+# Hash de relleno: cuando el correo no existe se verifica contra este valor para que login tarde lo mismo
+# exista o no la cuenta (evita revelar qué correos están registrados por el tiempo de respuesta, TC-SEG-01).
+DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(16))
+
+
 # --- Access token (JWT, HS256) ---
 
 def create_access_token(user_id: str, role_id: str) -> str:

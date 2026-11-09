@@ -181,3 +181,14 @@ def test_require_admin_distingue_administrador_de_otros_roles(make_user):
     with pytest.raises(HTTPException) as exc:
         require_admin(make_user(email="m@pruebas.com", role_id=MENTOR_ROLE_ID))
     assert exc.value.status_code == 403
+
+
+def test_login_verifica_bcrypt_aunque_el_correo_no_exista(client, monkeypatch):
+    """TC-SEG-01: el login con un correo inexistente ejecuta la misma verificación bcrypt que con uno existente."""
+    from app.routers import auth as auth_router
+    llamadas = []
+    original = auth_router.verify_password
+    monkeypatch.setattr(auth_router, "verify_password", lambda p, h: llamadas.append(h) or original(p, h))
+    r = client.post("/auth/login", json={"email": "nadie@pruebas.com", "password": "Cualquiera-123"})
+    assert r.status_code == 401
+    assert llamadas == [auth_router.DUMMY_PASSWORD_HASH]
