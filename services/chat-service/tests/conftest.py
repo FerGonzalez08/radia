@@ -98,6 +98,8 @@ def _schema():
 
 @pytest.fixture(autouse=True)
 def _clean_db():
+    from app.core.rate_limit import message_limiter
+    message_limiter.clear()
     manager.active_connections.clear()
     with engine.begin() as conn:
         tables = ", ".join(f'"{t.name}"' for t in Base.metadata.sorted_tables)

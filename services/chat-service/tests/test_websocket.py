@@ -132,3 +132,41 @@ def test_las_conexiones_inactivas_no_retienen_conexiones_del_pool(client, db, fa
         sockets[0].send_json({"content": "hola"})
         assert sockets[0].receive_json()["type"] == "ack"
         assert db.query(Mensaje).count() == 1
+
+
+def test_mensajes_por_encima_del_limite_por_minuto_se_rechazan(client, db, mentee, mentor, vinculo, monkeypatch):
+    """TC-CHT-13 / ASR-25: pasado el umbral se rechaza con error controlado y no se guarda."""
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "MESSAGES_PER_MINUTE", 5)
+    with client.websocket_connect(ws_url(mentor, mentee.token)) as ws:
+        respuestas = []
+        for i in range(8):
+            ws.send_json({"content": f"mensaje {i}"})
+            respuestas.append(ws.receive_json())
+    assert [r["type"] for r in respuestas] == ["ack"] * 5 + ["error"] * 3
+    assert respuestas[-1]["code"] == "rate_limited" and respuestas[-1]["retry_after"] >= 1
+    assert db.query(Message).count() == 5
+
+
+def test_el_limite_de_una_usuaria_no_afecta_a_otra(client, db, mentee, mentor, vinculo, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "MESSAGES_PER_MINUTE", 2)
+    with client.websocket_connect(ws_url(mentor, mentee.token)) as w_mentee:
+        for i in range(3):
+            w_mentee.send_json({"content": f"m{i}"})
+            w_mentee.receive_json()
+        with client.websocket_connect(ws_url(mentee, mentor.token)) as w_mentor:
+            w_mentor.send_json({"content": "respuesta"})
+            assert w_mentor.receive_json()["type"] == "ack"
+
+
+def test_mensaje_de_mas_de_2000_caracteres_da_error_controlado(client, db, mentee, mentor, vinculo):
+    """TC-CHT-04: error controlado; la conexión sigue abierta y no se guarda el mensaje."""
+    with client.websocket_connect(ws_url(mentor, mentee.token)) as ws:
+        ws.send_json({"content": "x" * 2001})
+        err = ws.receive_json()
+        ws.send_json({"content": "x" * 2000})
+        ok = ws.receive_json()
+    assert err["type"] == "error" and err["code"] == "message_too_long"
+    assert ok["type"] == "ack"
+    assert db.query(Message).count() == 1

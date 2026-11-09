@@ -5,7 +5,9 @@ from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconn
 from sqlalchemy.orm import Session
 
 from app.core.clients import has_active_mentorship, validate_session
+from app.core.config import settings
 from app.core.connection_manager import manager
+from app.core.rate_limit import message_limiter
 from app.core.database import SessionLocal
 from app.models.last_seen import LastSeen
 from app.models.message import Message
@@ -56,6 +58,23 @@ async def chat_websocket(websocket: WebSocket, other_user_id: uuid.UUID, token: 
             content = data.get("content", "").strip()
             if not content:
                 continue  # RQF-016 RN-01: no se procesa un mensaje vacío.
+
+            if len(content) > settings.MAX_MESSAGE_LENGTH:
+                # TC-CHT-04: error controlado; la conexión sigue abierta y no se guarda nada.
+                await websocket.send_json({
+                    "type": "error", "code": "message_too_long",
+                    "detail": f"El mensaje supera los {settings.MAX_MESSAGE_LENGTH} caracteres.",
+                })
+                continue
+
+            espera = message_limiter.retry_after(my_id_str, settings.MESSAGES_PER_MINUTE)
+            if espera is not None:
+                # TC-CHT-13 / ASR-25: se rechaza el exceso sin afectar a otras usuarias.
+                await websocket.send_json({
+                    "type": "error", "code": "rate_limited", "retry_after": espera,
+                    "detail": f"Estás enviando mensajes muy rápido. Intenta de nuevo en {espera} segundo(s).",
+                })
+                continue
 
             message = Message(
                 conversation_id=conversation_id,
