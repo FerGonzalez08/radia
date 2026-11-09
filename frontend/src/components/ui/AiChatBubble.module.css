@@ -94,3 +94,11 @@
     bottom: calc(var(--space-4) + 68px);
   }
 }
+
+/* Sobre /app/chat: queda por encima del campo de mensaje y del botón «Enviar». */
+.fab.elevated {
+  bottom: calc(var(--space-6) + 88px);
+}
+.panel.elevated {
+  bottom: calc(var(--space-6) + 88px + 68px);
+}

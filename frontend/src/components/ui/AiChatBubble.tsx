@@ -14,10 +14,13 @@ export function AiChatBubble() {
   // En la página completa del agente la burbuja sobra.
   if (pathname.startsWith("/app/orientacion")) return null;
 
+  // En el chat con la mentora, la burbuja se sube para no tapar el botón «Enviar» del campo de mensaje.
+  const elevated = pathname.startsWith("/app/chat") ? styles.elevated : "";
+
   return (
     <>
       {open && (
-        <div className={styles.panel} role="dialog" aria-label="Agente de orientación académica">
+        <div className={`${styles.panel} ${elevated}`} role="dialog" aria-label="Agente de orientación académica">
           <div className={styles.panelHeader}>
             <span className={styles.panelTitle}>
               <Bot size={16} /> Orientación académica · IA
@@ -45,7 +48,7 @@ export function AiChatBubble() {
 
       <button
         type="button"
-        className={styles.fab}
+        className={`${styles.fab} ${elevated}`}
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Cerrar agente de orientación" : "Abrir agente de orientación"}
         aria-expanded={open}
