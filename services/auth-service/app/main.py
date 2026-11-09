@@ -1,8 +1,12 @@
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
+from app.core.retention import purge_loop
 from app.routers import auth, internal
 
 
@@ -13,7 +17,14 @@ from app.routers import auth, internal
 # create_all — ver alembic/versions. Se deja este comentario para que quede
 # explícito que el cambio fue intencional.
 
-app = FastAPI(title="RADIA Auth Service", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    tarea = asyncio.create_task(purge_loop())  # TC-SEG-17: depuración periódica de datos de seguridad vencidos
+    yield
+    tarea.cancel()
+
+
+app = FastAPI(title="RADIA Auth Service", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

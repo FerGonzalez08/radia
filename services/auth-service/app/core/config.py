@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_LOGIN_PER_MIN: int = 60
     RATE_LIMIT_REGISTER_PER_MIN: int = 20
     RATE_LIMIT_RESET_PER_MIN: int = 10
+    # Retención de tokens vencidos e intentos de login, en días, y cada cuántas horas se depura (0 = no depurar).
+    RETENTION_DAYS: int = 30
+    PURGE_INTERVAL_HOURS: int = 24
+
     # Máximo de solicitudes de restablecimiento por cuenta y hora (TC-AUT-18).
     RESET_REQUESTS_PER_HOUR: int = 5
 
