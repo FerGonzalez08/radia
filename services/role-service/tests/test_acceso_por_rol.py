@@ -35,10 +35,11 @@ def test_administrador_accede(client, admin):
     assert client.get("/roles/users", headers=headers).status_code == 200
 
 
-def test_si_auth_service_no_responde_la_sesion_se_considera_invalida(client, fake_auth, admin):
+def test_si_auth_service_no_responde_se_deniega_el_acceso_con_503(client, fake_auth, admin):
+    """Falla cerrada (no se concede acceso) pero con un 503 que indica que el servicio de autenticación no está disponible."""
     _, headers = admin
     fake_auth.down = True
-    assert client.get("/roles/users", headers=headers).status_code == 401
+    assert client.get("/roles/users", headers=headers).status_code == 503
 
 
 def test_listar_roles_es_publico_y_devuelve_el_catalogo(client):
