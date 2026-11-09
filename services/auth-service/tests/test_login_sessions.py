@@ -244,3 +244,24 @@ def test_cuenta_sin_rol_valido_queda_bloqueada(client, db, make_user):
     assert r.status_code == 403 and "rol" in r.json()["detail"]
     previa = client.get("/auth/validate-session", headers={"Authorization": f"Bearer {tokens['access_token']}"})
     assert previa.status_code == 403
+
+
+def test_created_at_no_depende_del_default_de_la_base_de_datos(client, db, make_user):
+    """Regresión: en producción el default de created_at quedó fijo en la fecha de creación de la tabla.
+
+    Se reproduce ese estado y se comprueba que el bloqueo por 5 intentos fallidos sigue funcionando.
+    """
+    from sqlalchemy import text
+    tablas = ("login_attempts", "refresh_tokens", "verification_tokens")
+    for t in tablas:
+        db.execute(text(f"ALTER TABLE {t} ALTER COLUMN created_at SET DEFAULT '2020-01-01 00:00:00+00'::timestamptz"))
+    db.commit()
+    try:
+        make_user()
+        codigos = [login(client, password="incorrecta-123").status_code for _ in range(5)]
+        assert codigos == [401] * 5
+        assert login(client).status_code == 429  # bloqueada aunque el default de la base sea una fecha antigua
+    finally:
+        for t in tablas:
+            db.execute(text(f"ALTER TABLE {t} ALTER COLUMN created_at SET DEFAULT now()"))
+        db.commit()
