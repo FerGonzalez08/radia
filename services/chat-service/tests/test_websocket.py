@@ -111,3 +111,24 @@ def test_mensajes_persisten_entre_conexiones(client, db, mentee, mentor, vinculo
     assert [m.content for m in db.query(Message).order_by(Message.created_at)] == ["uno", "dos"]
     r = client.get(f"/conversations/{mentor.id}/messages", headers=mentee.headers)
     assert [m["content"] for m in r.json()] == ["uno", "dos"]
+
+
+def test_las_conexiones_inactivas_no_retienen_conexiones_del_pool(client, db, fake_auth, mentor):
+    """DEF-001 / TC-NFR-02: 20 usuarias conectadas sin escribir (más que las 15 del pool) no agotan la base de datos."""
+    from contextlib import ExitStack
+    from app.core.database import engine
+    from app.models.message import Message as Mensaje
+    from app.core.config import MENTEE_ROLE_ID
+
+    with ExitStack() as stack:
+        sockets = []
+        for _ in range(20):
+            u = fake_auth.add_user(MENTEE_ROLE_ID)
+            fake_auth.mentorships.add(frozenset((u["id"], str(mentor.id))))
+            token = fake_auth.login_as(u)["Authorization"].removeprefix("Bearer ")
+            sockets.append(stack.enter_context(client.websocket_connect(f"/ws/{mentor.id}?token={token}")))
+        assert engine.pool.checkedout() == 0
+        # El servicio sigue pudiendo usar la base de datos con 20 conexiones abiertas.
+        sockets[0].send_json({"content": "hola"})
+        assert sockets[0].receive_json()["type"] == "ack"
+        assert db.query(Mensaje).count() == 1
