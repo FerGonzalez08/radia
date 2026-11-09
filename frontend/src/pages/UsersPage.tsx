@@ -23,6 +23,8 @@ const STATUS_LABEL: Record<AdminUserRow["estado"], string> = {
   bloqueado: "Bloqueado",
 };
 
+const PAGE_SIZE = 25;
+
 export default function UsersPage() {
   const { accessToken } = useAuth();
   const [users, setUsers] = useState<AdminUserRow[]>([]);
@@ -31,20 +33,38 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  // TC-NFR-09: el filtro, la búsqueda y la paginación se resuelven en el servidor; se piden PAGE_SIZE + 1 filas para
+  // saber si hay una página más sin traer todo el listado.
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [hasMore, setHasMore] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setLimit(PAGE_SIZE);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const load = useCallback(async () => {
     if (!accessToken) return;
     setLoading(true);
     setError(null);
     try {
-      const result = await listUsersWithRoles(accessToken);
-      setUsers(result);
+      const result = await listUsersWithRoles(accessToken, {
+        q: debouncedSearch,
+        rol: filter === "todas" ? undefined : filter,
+        limit: limit + 1,
+      });
+      setHasMore(result.length > limit);
+      setUsers(result.slice(0, limit));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No pudimos cargar el listado de usuarios.");
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, debouncedSearch, filter, limit]);
 
   useEffect(() => {
     load();
@@ -55,8 +75,8 @@ export default function UsersPage() {
     setSavingId(user.id);
     setError(null);
     try {
-      const updated = await promoteToMentor(accessToken, user.id);
-      setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      await promoteToMentor(accessToken, user.id);
+      await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No pudimos promover a este usuario.");
     } finally {
@@ -69,20 +89,14 @@ export default function UsersPage() {
     setSavingId(user.id);
     setError(null);
     try {
-      const updated = await revertToMentee(accessToken, user.id);
-      setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+      await revertToMentee(accessToken, user.id);
+      await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No pudimos revertir el rol de este usuario.");
     } finally {
       setSavingId(null);
     }
   }
-
-  const filtered = users.filter((u) => {
-    const matchesRole = filter === "todas" || u.rol === filter;
-    const matchesSearch = `${u.nombre} ${u.correo}`.toLowerCase().includes(search.toLowerCase());
-    return matchesRole && matchesSearch;
-  });
 
   return (
     <div className={[styles.page, "fade-in"].join(" ")}>
@@ -103,7 +117,10 @@ export default function UsersPage() {
             <button
               key={f.value}
               className={[styles.filterBtn, filter === f.value ? styles.filterActive : ""].join(" ")}
-              onClick={() => setFilter(f.value)}
+              onClick={() => {
+                setFilter(f.value);
+                setLimit(PAGE_SIZE);
+              }}
             >
               {f.label}
             </button>
@@ -128,7 +145,7 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((u) => (
+              {users.map((u) => (
                 <tr key={u.id}>
                   <td>
                     <div className={styles.userCell}>
@@ -170,7 +187,7 @@ export default function UsersPage() {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {users.length === 0 && (
                 <tr>
                   <td colSpan={5} className={styles.empty}>
                     No se encontraron usuarios con ese criterio.
@@ -179,6 +196,13 @@ export default function UsersPage() {
               )}
             </tbody>
           </table>
+          {hasMore && (
+            <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
+              <button type="button" className={styles.actionBtn} onClick={() => setLimit((l) => l + PAGE_SIZE)}>
+                Mostrar más
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

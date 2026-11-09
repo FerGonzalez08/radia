@@ -141,3 +141,18 @@ def test_maximo_cinco_solicitudes_de_restablecimiento_por_hora(client, make_user
     assert codigos == [204] * 7
     assert db.query(VerificationToken).filter_by(type="password_reset").count() == 5
     assert len([e for e in sent_emails if e[0] == "reset"]) == 5
+
+
+def test_listado_interno_filtra_y_pagina_en_la_base_de_datos(client, make_user):
+    """TC-NFR-09: q, role_id, limit y offset; sin parámetros devuelve todas."""
+    from app.core.config import MENTOR_ROLE_ID
+    llave = {"X-Internal-Service-Key": "clave-interna-pruebas"}
+    for i in range(6):
+        make_user(f"est{i}@pruebas.com")
+    make_user("rosa@pruebas.com", role_id=MENTOR_ROLE_ID)
+    assert len(client.get("/internal/users", headers=llave).json()) == 7
+    assert len(client.get("/internal/users", params={"limit": 4}, headers=llave).json()) == 4
+    resto = client.get("/internal/users", params={"limit": 4, "offset": 4}, headers=llave).json()
+    assert len(resto) == 3
+    assert [u["email"] for u in client.get("/internal/users", params={"q": "ROSA"}, headers=llave).json()] == ["rosa@pruebas.com"]
+    assert len(client.get("/internal/users", params={"role_id": str(MENTOR_ROLE_ID)}, headers=llave).json()) == 1

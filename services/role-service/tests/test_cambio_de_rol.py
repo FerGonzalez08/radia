@@ -168,3 +168,19 @@ def test_revertir_a_una_mentora_cancela_sus_mentorias(client, fake_auth, admin, 
     assert client.post(f"/roles/{mentora['id']}/revert", headers=headers).status_code == 200
     assert fake_auth.cancelled_mentors == [mentora["id"]]
     assert fake_auth.users[mentora["id"]]["role_id"] == str(MENTEE_ROLE_ID)
+
+
+def test_listado_de_usuarias_filtra_y_pagina_en_el_servidor(client, fake_auth, admin):
+    """TC-NFR-09: con q, role_id, limit y offset se pide solo la página necesaria; sin parámetros devuelve todas."""
+    _, headers = admin
+    for i in range(7):
+        fake_auth.add_user(MENTEE_ROLE_ID, nombre=f"Estudiante {i}")
+    fake_auth.add_user(MENTOR_ROLE_ID, nombre="Mentora Rosa")
+    todas = client.get("/roles/users", headers=headers).json()
+    assert len(todas) == 9  # 8 + la administradora
+    pagina = client.get("/roles/users", params={"limit": 3, "offset": 3}, headers=headers).json()
+    assert [u["id"] for u in pagina] == [u["id"] for u in todas[3:6]]
+    assert [u["nombre"] for u in client.get("/roles/users", params={"q": "rosa"}, headers=headers).json()] == ["Mentora Rosa"]
+    mentoras = client.get("/roles/users", params={"role_id": str(MENTOR_ROLE_ID)}, headers=headers).json()
+    assert len(mentoras) == 1
+    assert client.get("/roles/users", params={"limit": 501}, headers=headers).status_code == 422

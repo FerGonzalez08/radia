@@ -67,7 +67,16 @@ class FakeAuth:
             self.cancelled_mentors.append(path.split("/")[3])
             return httpx.Response(200, json={"cancelled": 1})
         if path == "/internal/users" and request.method == "GET":
-            return httpx.Response(200, json=list(self.users.values()))
+            qp = request.url.params
+            usuarios = list(self.users.values())
+            if qp.get("q"):
+                usuarios = [u for u in usuarios if qp["q"].lower() in (u["nombre"] + u["email"]).lower()]
+            if qp.get("role_id"):
+                usuarios = [u for u in usuarios if u["role_id"] == qp["role_id"]]
+            if qp.get("limit"):
+                desde = int(qp.get("offset", 0))
+                usuarios = usuarios[desde:desde + int(qp["limit"])]
+            return httpx.Response(200, json=usuarios)
         if path.startswith("/internal/users/") and path.endswith("/role") and request.method == "PATCH":
             uid = path.split("/")[3]
             if uid not in self.users:

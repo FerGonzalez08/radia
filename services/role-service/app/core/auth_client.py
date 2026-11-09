@@ -38,6 +38,18 @@ async def list_users_internal() -> list[dict]:
     return response.json()
 
 
+async def list_users_page_internal(q: str | None, role_id: str | None, limit: int | None, offset: int) -> list[dict]:
+    """Una página de usuarias, con filtro y paginación resueltos en la base de datos de Auth Service."""
+    params = {k: v for k, v in {"q": q, "role_id": role_id, "limit": limit, "offset": offset}.items() if v not in (None, "")}
+    response = await _enviar(
+        "GET", f"{settings.AUTH_SERVICE_URL}/internal/users", AUTH_NO_DISPONIBLE,
+        headers={"X-Internal-Service-Key": settings.INTERNAL_SERVICE_KEY}, params=params,
+    )
+    if response.status_code != 200:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Auth Service unavailable")
+    return response.json()
+
+
 async def update_user_role_internal(user_id: str, role_id: str) -> dict:
     response = await _enviar(
         "PATCH", f"{settings.AUTH_SERVICE_URL}/internal/users/{user_id}/role", AUTH_NO_DISPONIBLE,

@@ -2,12 +2,13 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.auth_client import (
     cancel_mentor_mentorships_internal,
     list_users_internal,
+    list_users_page_internal,
     update_user_role_internal,
 )
 from app.core.config import ADMIN_ROLE_ID, MENTEE_ROLE_ID, MENTOR_ROLE_ID
@@ -28,9 +29,19 @@ async def list_roles(db: Session = Depends(get_db), _session: dict = Depends(get
 
 
 @router.get("/users", response_model=list[UserWithRoleOut])
-async def list_users(_admin: dict = Depends(require_admin)):
-    """Acceso: rol Administradora."""
-    return await list_users_internal()
+async def list_users(
+    q: str | None = Query(default=None, max_length=100, description="Texto a buscar en nombre o correo"),
+    role_id: uuid.UUID | None = Query(default=None, description="Filtra por rol"),
+    limit: int | None = Query(default=None, ge=1, le=500, description="Máximo de filas; sin valor devuelve todas"),
+    offset: int = Query(default=0, ge=0),
+    _admin: dict = Depends(require_admin),
+):
+    """Lista las usuarias con su rol. Sin parámetros devuelve todas; con q, role_id, limit y offset el filtro y la
+    paginación se resuelven en la base de datos (TC-NFR-09).
+
+    Acceso: rol Administradora.
+    """
+    return await list_users_page_internal(q, str(role_id) if role_id else None, limit, offset)
 
 
 @router.get("/audit-log", response_model=list[RoleChangeLogOut])
