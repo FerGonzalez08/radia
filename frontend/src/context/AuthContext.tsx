@@ -121,13 +121,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // HU006 - Escenario 3: cierre de sesión automático tras 30 min de inactividad.
+  // El efecto depende solo de si hay sesión: la renovación automática del token cambia accessToken y
+  // doLogout cada ~14 min, y si el efecto dependiera de ellos reiniciaría el temporizador sin actividad
+  // de la usuaria (la sesión nunca se cerraría por inactividad). doLogout se lee desde una referencia.
+  const doLogoutRef = useRef(doLogout);
   useEffect(() => {
-    if (!accessToken) return;
+    doLogoutRef.current = doLogout;
+  }, [doLogout]);
+  const hasSession = Boolean(accessToken);
+
+  useEffect(() => {
+    if (!hasSession) return;
 
     const resetTimer = () => {
       if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
       inactivityTimer.current = setTimeout(() => {
-        doLogout("Tu sesión se cerró por inactividad. Vuelve a iniciar sesión.");
+        doLogoutRef.current("Tu sesión se cerró por inactividad. Vuelve a iniciar sesión.");
       }, INACTIVITY_LIMIT_MS);
     };
 
@@ -138,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ACTIVITY_EVENTS.forEach((evt) => window.removeEventListener(evt, resetTimer));
       if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
     };
-  }, [accessToken, doLogout]);
+  }, [hasSession]);
 
   // HU004 - Escenario 4: renovación automática del JWT antes de expirar,
   // ahora contra /auth/refresh real (con rotación de refresh token).
