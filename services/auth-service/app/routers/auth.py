@@ -272,6 +272,43 @@ def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
 
 
 @router.post(
+    "/resend-verification", status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(rate_limit("resend", "RATE_LIMIT_RESET_PER_MIN"))],
+)
+def resend_verification(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Reenvía el enlace de verificación de correo a una cuenta que aún no está verificada.
+
+    Responde 204 exista o no la cuenta, esté o no verificada y haya o no alcanzado el límite (máximo 5 envíos por hora y
+    cuenta), para no revelar qué correos están registrados. Acceso: público (no requiere sesión).
+    """
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user is None or user.is_verified or not user.is_active:
+        return None
+
+    enviados_ultima_hora = db.query(VerificationToken).filter(
+        VerificationToken.user_id == user.id,
+        VerificationToken.type == "email_verification",
+        VerificationToken.created_at >= datetime.now(timezone.utc) - timedelta(hours=1),
+    ).count()
+    if enviados_ultima_hora >= settings.RESET_REQUESTS_PER_HOUR:
+        return None
+
+    verification_plain = generate_opaque_token()
+    db.add(VerificationToken(
+        user_id=user.id,
+        token_hash=hash_opaque_token(verification_plain),
+        type="email_verification",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+    ))
+    db.commit()
+    try:
+        send_verification_email(user.email, verification_plain)
+    except Exception:
+        pass  # misma respuesta aunque falle el envío
+    return None
+
+
+@router.post(
     "/password-reset/request", status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(rate_limit("reset", "RATE_LIMIT_RESET_PER_MIN"))],
 )

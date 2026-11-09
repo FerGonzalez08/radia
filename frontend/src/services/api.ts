@@ -166,3 +166,12 @@ export async function resetPassword(token: string, password: string): Promise<vo
     body: JSON.stringify({ token, new_password: password }),
   });
 }
+
+// --- Reenvío del enlace de verificación (TC-AUT-20) ------------------------
+
+export async function resendVerification(correo: string): Promise<void> {
+  await request<void>("/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({ email: correo.trim() }),
+  });
+}

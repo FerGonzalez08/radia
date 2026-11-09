@@ -108,3 +108,32 @@ def test_registro_rechaza_contrasena_que_incumple_la_politica(client, password):
 def test_restablecer_contrasena_aplica_la_misma_politica(client):
     r = client.post("/auth/password-reset/confirm", json={"token": "x", "new_password": "sololetras"})
     assert r.status_code == 422
+
+
+def test_reenviar_verificacion_envia_un_enlace_nuevo_que_funciona(client, make_user, sent_emails, db):
+    """TC-AUT-20: la cuenta sin verificar recibe un correo nuevo y el enlace verifica la cuenta."""
+    make_user("sinverificar@pruebas.com", verified=False)
+    assert client.post("/auth/resend-verification", json={"email": "sinverificar@pruebas.com"}).status_code == 204
+    assert [e[0] for e in sent_emails] == ["verify"]
+    assert client.post("/auth/verify-email", json={"token": sent_emails[0][2]}).status_code == 204
+    assert db.query(User).filter_by(email="sinverificar@pruebas.com").one().is_verified is True
+
+
+def test_reenviar_verificacion_no_revela_si_la_cuenta_existe_ni_envia_a_cuentas_verificadas(client, make_user, sent_emails):
+    make_user("verificada@pruebas.com", verified=True)
+    for correo in ("verificada@pruebas.com", "nadie@pruebas.com"):
+        assert client.post("/auth/resend-verification", json={"email": correo}).status_code == 204
+    assert sent_emails == []
+
+
+def test_reenviar_verificacion_tiene_limite_por_hora(client, make_user, sent_emails):
+    from app.core.config import settings
+    previo = settings.RATE_LIMIT_RESET_PER_MIN
+    settings.RATE_LIMIT_RESET_PER_MIN = 0
+    try:
+        make_user("limite2@pruebas.com", verified=False)
+        for _ in range(8):
+            client.post("/auth/resend-verification", json={"email": "limite2@pruebas.com"})
+    finally:
+        settings.RATE_LIMIT_RESET_PER_MIN = previo
+    assert len(sent_emails) == 5
