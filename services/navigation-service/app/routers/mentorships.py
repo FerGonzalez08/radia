@@ -75,6 +75,7 @@ async def _send_confirmation_emails(db: Session, mentorship: Mentorship, slot: A
 
 @router.get("/mentors/me/settings", response_model=MentorSettingsOut)
 def get_my_settings(db: Session = Depends(get_db), session: dict = Depends(require_mentor)):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
     return _get_or_create_settings(db, mentor_id)
 
@@ -85,6 +86,7 @@ def update_my_settings(
     db: Session = Depends(get_db),
     session: dict = Depends(require_mentor),
 ):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
     settings_row = _get_or_create_settings(db, mentor_id)
     settings_row.auto_accept = payload.auto_accept
@@ -101,6 +103,7 @@ async def request_mentorship(
     db: Session = Depends(get_db),
     session: dict = Depends(get_current_session),
 ):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     if session.get("role_id") != str(MENTEE_ROLE_ID):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Solo un estudiante puede solicitar mentoría")
 
@@ -182,6 +185,7 @@ async def _to_out(db: Session, mentorships: list[Mentorship]) -> list[Mentorship
 
 @router.get("/mentors/me/mentorships", response_model=list[MentorshipOut])
 async def list_my_mentor_requests(db: Session = Depends(get_db), session: dict = Depends(require_mentor)):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
     rows = db.query(Mentorship).filter(Mentorship.mentor_user_id == mentor_id).order_by(Mentorship.created_at.desc()).all()
     return await _to_out(db, rows)
@@ -189,6 +193,7 @@ async def list_my_mentor_requests(db: Session = Depends(get_db), session: dict =
 
 @router.get("/students/me/mentorships", response_model=list[MentorshipOut])
 async def list_my_student_requests(db: Session = Depends(get_db), session: dict = Depends(get_current_session)):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     student_id = uuid.UUID(session["user_id"])
     rows = db.query(Mentorship).filter(Mentorship.student_user_id == student_id).order_by(Mentorship.created_at.desc()).all()
     return await _to_out(db, rows)
@@ -200,6 +205,7 @@ async def accept_mentorship(
     db: Session = Depends(get_db),
     session: dict = Depends(require_mentor),
 ):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
     mentorship = db.query(Mentorship).filter(
         Mentorship.id == mentorship_id, Mentorship.mentor_user_id == mentor_id
@@ -230,6 +236,7 @@ def reject_mentorship(
     db: Session = Depends(get_db),
     session: dict = Depends(require_mentor),
 ):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
     mentorship = db.query(Mentorship).filter(
         Mentorship.id == mentorship_id, Mentorship.mentor_user_id == mentor_id
@@ -256,6 +263,7 @@ def cancel_mentorship(
     db: Session = Depends(get_db),
     session: dict = Depends(get_current_session),
 ):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     user_id = uuid.UUID(session["user_id"])
     mentorship = db.query(Mentorship).filter(
         Mentorship.id == mentorship_id,
@@ -287,6 +295,7 @@ def check_active_mentorship(
     db: Session = Depends(get_db),
     _key: None = Depends(verify_internal_key),
 ):
+    """Acceso: interno entre servicios (cabecera X-Internal-Key); no es para usuarias finales."""
     exists = db.query(Mentorship).filter(
         Mentorship.status == "confirmada",
         (

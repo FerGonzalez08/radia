@@ -61,6 +61,7 @@ def _calculate_age(birth_date: date) -> int:
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status.HTTP_409_CONFLICT, "Ese correo ya está registrado")
@@ -128,6 +129,7 @@ def _check_login_lockout(db: Session, email: str) -> datetime | None:
 
 @router.post("/login", response_model=TokenPair)
 def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     ip_address = _get_client_ip(request)
 
     unlock_at = _check_login_lockout(db, payload.email)
@@ -165,6 +167,7 @@ def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)):
 
 @router.post("/refresh", response_model=TokenPair)
 def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     token_hash = hash_opaque_token(payload.refresh_token)
     stored = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
 
@@ -206,6 +209,7 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     token_hash = hash_opaque_token(payload.refresh_token)
     stored = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
 
@@ -223,6 +227,7 @@ def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
 def validate_session(current_user: User = Depends(get_current_user)):
     # get_current_user ya valida firma, expiración, existencia y is_active.
     # Este endpoint es el único punto de verdad que otros microservicios consultan.
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     return ValidateSessionResponse(
         valid=True,
         user_id=current_user.id,
@@ -232,11 +237,13 @@ def validate_session(current_user: User = Depends(get_current_user)):
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     return current_user
 
 
 @router.post("/verify-email", status_code=status.HTTP_204_NO_CONTENT)
 def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     token_hash = hash_opaque_token(payload.token)
     record = db.query(VerificationToken).filter(
         VerificationToken.token_hash == token_hash,
@@ -255,6 +262,7 @@ def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
 
 @router.post("/password-reset/request", status_code=status.HTTP_204_NO_CONTENT)
 def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     user = db.query(User).filter(User.email == payload.email).first()
 
     if user is not None:
@@ -279,6 +287,7 @@ def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(
 
 @router.post("/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
 def confirm_password_reset(payload: PasswordResetConfirm, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     token_hash = hash_opaque_token(payload.token)
     record = db.query(VerificationToken).filter(
         VerificationToken.token_hash == token_hash,

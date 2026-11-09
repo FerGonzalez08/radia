@@ -41,4 +41,5 @@ def seed_roles():
 
 @app.get("/health")
 def health():
+    """Acceso: público (no requiere sesión)."""
     return {"status": "ok"}

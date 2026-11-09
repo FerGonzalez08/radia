@@ -17,11 +17,13 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 
 @router.get("", response_model=list[RoleOut])
 def list_roles(db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     return db.query(Role).all()
 
 
 @router.get("/users", response_model=list[UserWithRoleOut])
 async def list_users(_admin: dict = Depends(require_admin)):
+    """Acceso: rol Administradora."""
     return await list_users_internal()
 
 
@@ -29,7 +31,10 @@ async def list_users(_admin: dict = Depends(require_admin)):
 async def list_audit_log(db: Session = Depends(get_db), _admin: dict = Depends(require_admin)):
     """HU-AUDIT - Traza de todos los cambios de rol (promover/revertir), mas
     reciente primero, con nombres y roles ya resueltos para el panel de
-    administracion (ningun dato tecnico crudo, solo lo que se va a mostrar)."""
+    administracion (ningun dato tecnico crudo, solo lo que se va a mostrar).
+
+    Acceso: rol Administradora.
+    """
     entries = db.query(RoleChangeLog).order_by(RoleChangeLog.changed_at.desc()).all()
     if not entries:
         return []
@@ -78,6 +83,7 @@ async def promote_to_mentor(
     db: Session = Depends(get_db),
     admin: dict = Depends(require_admin),
 ):
+    """Acceso: rol Administradora."""
     target = await _get_target_user(user_id)
 
     if target["role_id"] == str(ADMIN_ROLE_ID):
@@ -105,6 +111,7 @@ async def revert_to_estudiante(
     db: Session = Depends(get_db),
     admin: dict = Depends(require_admin),
 ):
+    """Acceso: rol Administradora."""
     target = await _get_target_user(user_id)
 
     if target["role_id"] == str(ADMIN_ROLE_ID):

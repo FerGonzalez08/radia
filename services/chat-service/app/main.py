@@ -23,4 +23,5 @@ app.include_router(ws.router)
 
 @app.get("/health")
 def health():
+    """Acceso: público (no requiere sesión)."""
     return {"status": "ok"}
