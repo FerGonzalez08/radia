@@ -20,8 +20,11 @@ import { listMyMentorRequests, listMyStudentMentorships } from "./navigationApi"
 import { getPeerName } from "./peerNameCache";
 import { pickAvatarColor } from "./api";
 
-const MAX_RECONNECT_ATTEMPTS = 5; // RQNF 4.4 / ASR-02
-const BASE_BACKOFF_MS = 800;
+// RQNF 4.4 / ASR-02: la reconexión debe lograrse en pocos segundos cuando el servicio vuelve. Se reintenta sin límite
+// de intentos (el indicador muestra «Reconectando…» mientras tanto) y con una espera que crece hasta un tope corto,
+// para que el tiempo hasta reconectar tras volver el servicio no supere ese tope.
+const BASE_BACKOFF_MS = 500;
+const MAX_BACKOFF_MS = 2_000;
 const ACK_TIMEOUT_MS = 10_000;
 
 type Listener<T> = (payload: T) => void;
@@ -148,6 +151,7 @@ export class RealChatSocket {
     ws.onopen = () => {
       this.reconnectAttempts.set(partnerId, 0);
       this.setPartnerState(partnerId, "conectado");
+      this.flushPending(partnerId);
     };
 
     ws.onmessage = (event) => {
@@ -170,16 +174,25 @@ export class RealChatSocket {
 
   private attemptReconnect(partnerId: string) {
     const attempts = this.reconnectAttempts.get(partnerId) ?? 0;
-    if (attempts >= MAX_RECONNECT_ATTEMPTS) {
-      this.setPartnerState(partnerId, "desconectado");
-      return;
-    }
-    const delayMs = BASE_BACKOFF_MS * Math.pow(2, attempts);
+    const delayMs = Math.min(BASE_BACKOFF_MS * Math.pow(2, attempts), MAX_BACKOFF_MS);
     this.reconnectAttempts.set(partnerId, attempts + 1);
     setTimeout(() => {
       if (this.closed) return;
       this.openSocket(partnerId);
     }, delayMs);
+  }
+
+  /** TC-CHT-15: al reconectar se envían, en orden, los mensajes que quedaron «pendientes» por no haber conexión.
+   *  Los marcados «error» (se enviaron pero no llegó el acuse) no se reenvían solos: podrían duplicarse. */
+  private flushPending(partnerId: string) {
+    const conversation = this.conversations.get(partnerId);
+    if (!conversation) return;
+    const pendientes = conversation.mensajes.filter((m) => m.autorId === this.userId && m.status === "pendiente");
+    for (const msg of pendientes) {
+      msg.status = "enviado";
+      this.sendOverSocket(partnerId, msg.id, msg.texto);
+    }
+    if (pendientes.length > 0) this.emitConversations();
   }
 
   private handleIncoming(partnerId: string, raw: string) {
@@ -222,6 +235,24 @@ export class RealChatSocket {
           msg.id = String(data.id);
           msg.status = data.status === "entregado" ? "entregado" : "enviado";
         }
+      }
+      this.emitConversations();
+      return;
+    }
+
+    if (data.type === "error") {
+      // El servidor rechazó el mensaje (límite por minuto o longitud): no habrá «ack»; se marca para reintentar.
+      const queue = this.pendingQueue.get(partnerId) ?? [];
+      const tempId = queue.shift();
+      this.pendingQueue.set(partnerId, queue);
+      if (tempId) {
+        const timer = this.ackTimers.get(tempId);
+        if (timer) {
+          clearTimeout(timer);
+          this.ackTimers.delete(tempId);
+        }
+        const msg = conversation.mensajes.find((m) => m.id === tempId);
+        if (msg) msg.status = "error";
       }
       this.emitConversations();
       return;
