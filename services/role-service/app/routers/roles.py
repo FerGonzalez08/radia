@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.auth_client import list_users_internal, update_user_role_internal
 from app.core.config import ADMIN_ROLE_ID, MENTEE_ROLE_ID, MENTOR_ROLE_ID
 from app.core.database import get_db
-from app.core.deps import require_admin
+from app.core.deps import get_current_session, require_admin
 from app.models.role import Role
 from app.models.role_change_log import RoleChangeLog
 from app.schemas.role import RoleChangeLogOut, RoleOut, UserWithRoleOut
@@ -16,8 +16,8 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 
 
 @router.get("", response_model=list[RoleOut])
-def list_roles(db: Session = Depends(get_db)):
-    """Acceso: público (no requiere sesión)."""
+async def list_roles(db: Session = Depends(get_db), _session: dict = Depends(get_current_session)):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     return db.query(Role).all()
 
 
