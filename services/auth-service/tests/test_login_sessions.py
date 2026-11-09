@@ -192,3 +192,24 @@ def test_login_verifica_bcrypt_aunque_el_correo_no_exista(client, monkeypatch):
     r = client.post("/auth/login", json={"email": "nadie@pruebas.com", "password": "Cualquiera-123"})
     assert r.status_code == 401
     assert llamadas == [auth_router.DUMMY_PASSWORD_HASH]
+
+
+def test_login_responde_429_al_superar_el_limite_por_ip(client, monkeypatch):
+    """TC-SEG-08: una ráfaga de logins desde la misma IP recibe 429 con Retry-After tras el umbral."""
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "RATE_LIMIT_LOGIN_PER_MIN", 5)
+    cuerpo = {"email": "nadie@pruebas.com", "password": "Cualquiera-123"}
+    codigos = [client.post("/auth/login", json=cuerpo).status_code for _ in range(8)]
+    assert codigos[:5] == [401] * 5
+    assert codigos[5:] == [429] * 3
+    assert "retry-after" in client.post("/auth/login", json=cuerpo).headers
+
+
+def test_el_limite_de_una_ip_no_afecta_a_otra(client, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "RATE_LIMIT_LOGIN_PER_MIN", 2)
+    cuerpo = {"email": "nadie@pruebas.com", "password": "Cualquiera-123"}
+    for _ in range(3):
+        client.post("/auth/login", json=cuerpo, headers={"X-Forwarded-For": "10.0.0.1"})
+    assert client.post("/auth/login", json=cuerpo, headers={"X-Forwarded-For": "10.0.0.1"}).status_code == 429
+    assert client.post("/auth/login", json=cuerpo, headers={"X-Forwarded-For": "10.0.0.2"}).status_code == 401

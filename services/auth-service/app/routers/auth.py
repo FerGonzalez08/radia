@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.config import ADMIN_ROLE_ID, MENTEE_ROLE_ID, MENTOR_ROLE_ID, settings
 from app.core.deps import get_current_user, require_admin
+from app.core.rate_limit import rate_limit
 from app.core.email import send_password_reset_email, send_verification_email
 from app.core.security import (
     create_access_token,
@@ -59,7 +60,10 @@ def _calculate_age(birth_date: date) -> int:
         age -= 1
     return age
 
-@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserOut, status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("register", "RATE_LIMIT_REGISTER_PER_MIN"))],
+)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
     """Acceso: público (no requiere sesión)."""
     existing = db.query(User).filter(User.email == payload.email).first()
@@ -127,7 +131,10 @@ def _check_login_lockout(db: Session, email: str) -> datetime | None:
     unlock_at = last_failed.created_at + timedelta(minutes=15)
     return unlock_at if now < unlock_at else None
 
-@router.post("/login", response_model=TokenPair)
+@router.post(
+    "/login", response_model=TokenPair,
+    dependencies=[Depends(rate_limit("login", "RATE_LIMIT_LOGIN_PER_MIN"))],
+)
 def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)):
     """Acceso: público (no requiere sesión)."""
     ip_address = _get_client_ip(request)
@@ -260,12 +267,25 @@ def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
     return None
 
 
-@router.post("/password-reset/request", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/password-reset/request", status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(rate_limit("reset", "RATE_LIMIT_RESET_PER_MIN"))],
+)
 def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
     """Acceso: público (no requiere sesión)."""
     user = db.query(User).filter(User.email == payload.email).first()
 
+    # TC-AUT-18: máximo de solicitudes por cuenta y hora. Las que exceden se ignoran sin generar token ni correo,
+    # y la respuesta es la misma (no revela si la cuenta existe ni si alcanzó el límite).
+    solicitudes_ultima_hora = 0
     if user is not None:
+        solicitudes_ultima_hora = db.query(VerificationToken).filter(
+            VerificationToken.user_id == user.id,
+            VerificationToken.type == "password_reset",
+            VerificationToken.created_at >= datetime.now(timezone.utc) - timedelta(hours=1),
+        ).count()
+
+    if user is not None and solicitudes_ultima_hora < settings.RESET_REQUESTS_PER_HOUR:
         reset_plain = generate_opaque_token()
         db.add(VerificationToken(
             user_id=user.id,

@@ -25,6 +25,13 @@ class Settings(BaseSettings):
 
     INTERNAL_SERVICE_KEY: str
 
+    # Límites de frecuencia por IP y por minuto (0 = sin límite).
+    RATE_LIMIT_LOGIN_PER_MIN: int = 60
+    RATE_LIMIT_REGISTER_PER_MIN: int = 20
+    RATE_LIMIT_RESET_PER_MIN: int = 10
+    # Máximo de solicitudes de restablecimiento por cuenta y hora (TC-AUT-18).
+    RESET_REQUESTS_PER_HOUR: int = 5
+
 
 settings = Settings()
 import uuid

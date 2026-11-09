@@ -125,3 +125,19 @@ def test_el_cambio_de_rol_se_refleja_de_inmediato_en_validate_session(client, ma
 
 def test_health(client):
     assert client.get("/health").json() == {"status": "ok"}
+
+
+def test_maximo_cinco_solicitudes_de_restablecimiento_por_hora(client, make_user, sent_emails, db):
+    """TC-AUT-18: la 6.ª solicitud no genera token ni correo y responde igual (204)."""
+    from app.models.verification_token import VerificationToken
+    from app.core.config import settings
+    settings_limite = settings.RATE_LIMIT_RESET_PER_MIN
+    settings.RATE_LIMIT_RESET_PER_MIN = 0  # aísla el límite por cuenta del límite por IP
+    try:
+        make_user("limite@pruebas.com")
+        codigos = [client.post("/auth/password-reset/request", json={"email": "limite@pruebas.com"}).status_code for _ in range(7)]
+    finally:
+        settings.RATE_LIMIT_RESET_PER_MIN = settings_limite
+    assert codigos == [204] * 7
+    assert db.query(VerificationToken).filter_by(type="password_reset").count() == 5
+    assert len([e for e in sent_emails if e[0] == "reset"]) == 5

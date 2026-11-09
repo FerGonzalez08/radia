@@ -57,6 +57,13 @@ def _schema():
 
 
 @pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    from app.core.rate_limit import limiter
+    limiter.clear()
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _clean_db():
     with engine.begin() as conn:
         tables = ", ".join(f'"{t.name}"' for t in Base.metadata.sorted_tables)
