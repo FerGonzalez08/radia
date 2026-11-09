@@ -213,3 +213,34 @@ def test_el_limite_de_una_ip_no_afecta_a_otra(client, monkeypatch):
         client.post("/auth/login", json=cuerpo, headers={"X-Forwarded-For": "10.0.0.1"})
     assert client.post("/auth/login", json=cuerpo, headers={"X-Forwarded-For": "10.0.0.1"}).status_code == 429
     assert client.post("/auth/login", json=cuerpo, headers={"X-Forwarded-For": "10.0.0.2"}).status_code == 401
+
+
+def test_el_access_token_deja_de_valer_al_cerrar_la_sesion(client, make_user):
+    """TC-AUT-17: tras el logout, el access token responde 401 de inmediato (ASR-11: <= 2 s)."""
+    make_user()
+    tokens = login(client).json()
+    cabecera = {"Authorization": f"Bearer {tokens['access_token']}"}
+    assert client.get("/auth/validate-session", headers=cabecera).status_code == 200
+    assert client.post("/auth/logout", json={"refresh_token": tokens["refresh_token"]}).status_code == 204
+    assert client.get("/auth/validate-session", headers=cabecera).status_code == 401
+
+
+def test_el_access_token_sigue_valiendo_tras_renovar_la_sesion(client, make_user):
+    make_user()
+    tokens = login(client).json()
+    nuevos = client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]}).json()
+    for access in (tokens["access_token"], nuevos["access_token"]):
+        assert client.get("/auth/validate-session", headers={"Authorization": f"Bearer {access}"}).status_code == 200
+
+
+def test_cuenta_sin_rol_valido_queda_bloqueada(client, db, make_user):
+    """TC-AUT-23: con un rol fuera del catálogo no puede iniciar sesión ni usar una sesión previa."""
+    import uuid
+    u = make_user()
+    tokens = login(client).json()
+    u.role_id = uuid.uuid4()
+    db.commit()
+    r = login(client)
+    assert r.status_code == 403 and "rol" in r.json()["detail"]
+    previa = client.get("/auth/validate-session", headers={"Authorization": f"Bearer {tokens['access_token']}"})
+    assert previa.status_code == 403

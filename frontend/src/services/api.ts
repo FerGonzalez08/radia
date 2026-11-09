@@ -30,6 +30,9 @@ const mapAuthError: ErrorMapper = (status, detail) => {
     if (text === "Email not verified") {
       return new ApiError("Debes verificar tu cuenta antes de iniciar sesión.", { code: "NOT_VERIFIED" });
     }
+    if (text?.startsWith("Tu cuenta aún no tiene un rol")) {
+      return new ApiError(text, { code: "NO_ROLE" });
+    }
     if (text === "Account is deactivated") {
       return new ApiError("Tu cuenta está desactivada. Contacta a un administrador.", { code: "ACCOUNT_DISABLED" });
     }

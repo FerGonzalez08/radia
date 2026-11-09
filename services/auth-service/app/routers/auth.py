@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.config import ADMIN_ROLE_ID, MENTEE_ROLE_ID, MENTOR_ROLE_ID, settings
-from app.core.deps import get_current_user, require_admin
+from app.core.config import ADMIN_ROLE_ID, KNOWN_ROLE_IDS, MENTEE_ROLE_ID, MENTOR_ROLE_ID, settings
+from app.core.deps import SIN_ROL_MENSAJE, get_current_user, require_admin
 from app.core.rate_limit import rate_limit
 from app.core.email import send_password_reset_email, send_verification_email
 from app.core.security import (
@@ -39,13 +39,14 @@ def _get_client_ip(request: Request) -> str:
 
 
 def _issue_token_pair(db: Session, user: User) -> TokenPair:
-    access_token = create_access_token(str(user.id), str(user.role_id))
+    family_id = uuid.uuid4()
+    access_token = create_access_token(str(user.id), str(user.role_id), str(family_id))
 
     refresh_plain = generate_opaque_token()
     refresh_token = RefreshToken(
         user_id=user.id,
         token_hash=hash_opaque_token(refresh_plain),
-        family_id=uuid.uuid4(),
+        family_id=family_id,
         expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
     db.add(refresh_token)
@@ -169,6 +170,9 @@ def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)):
     if not user.is_verified:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Email not verified")
 
+    if user.role_id not in KNOWN_ROLE_IDS:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, SIN_ROL_MENSAJE)
+
     return _issue_token_pair(db, user)
 
 
@@ -200,7 +204,7 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
     # Rotación: se revoca el token usado y se emite uno nuevo en la misma familia.
     stored.revoked_at = datetime.now(timezone.utc)
 
-    access_token = create_access_token(str(user.id), str(user.role_id))
+    access_token = create_access_token(str(user.id), str(user.role_id), str(stored.family_id))
     new_plain = generate_opaque_token()
     new_refresh = RefreshToken(
         user_id=user.id,
