@@ -2,6 +2,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -84,8 +85,9 @@ async def _send_confirmation_emails(db: Session, mentorship: Mentorship, slot: A
     end_str = slot.end_time.strftime("%H:%M")
 
     try:
-        send_mentorship_confirmation(student["email"], mentor["nombre"], date_str, start_str, end_str)
-        send_mentorship_confirmation(mentor["email"], student["nombre"], date_str, start_str, end_str)
+        # El envío es una llamada de red síncrona: va a un hilo para no detener el ciclo de eventos (otras solicitudes).
+        await run_in_threadpool(send_mentorship_confirmation, student["email"], mentor["nombre"], date_str, start_str, end_str)
+        await run_in_threadpool(send_mentorship_confirmation, mentor["email"], student["nombre"], date_str, start_str, end_str)
     except Exception:
         pass  # Mismo criterio que en Auth Service: el correo no debe tumbar la operación.
 
@@ -118,6 +120,71 @@ def update_my_settings(
 
 # --- RQF-028: solicitud de mentoría ---
 
+def _reservar_bloque(db: Session, student_id: uuid.UUID, slot_id: uuid.UUID) -> tuple[Mentorship, AvailabilitySlot, bool]:
+    """Reserva un bloque en una sola transacción, con bloqueo de filas (ASR-26/27).
+
+    Es una función síncrona que se ejecuta en un hilo aparte (run_in_threadpool): si dos solicitudes se esperan por un
+    bloqueo, solo se detiene un hilo, no el ciclo de eventos del servicio. Ante cualquier error se deshace la transacción
+    de inmediato para soltar los bloqueos.
+    """
+    try:
+        slot = db.query(AvailabilitySlot).filter(AvailabilitySlot.id == slot_id).first()
+        if slot is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Bloque de disponibilidad no encontrado")
+
+        # Orden de bloqueo fijo (mentora, luego bloque) para evitar interbloqueos entre solicitudes simultáneas (ASR-26/27).
+        settings_row = _lock_settings(db, slot.mentor_user_id)
+        slot = (
+            db.query(AvailabilitySlot).filter(AvailabilitySlot.id == slot_id)
+            .with_for_update().populate_existing().first()
+        )
+        if slot is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Bloque de disponibilidad no encontrado")
+        if slot.status != "libre":
+            raise HTTPException(status.HTTP_409_CONFLICT, "Este bloque ya no está disponible")
+
+        confirmed_count = _confirmed_count_in_week(db, slot.mentor_user_id, slot.date)
+
+        if confirmed_count >= settings_row.weekly_limit:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Esta mentora alcanzó su límite de mentorías esta semana")
+
+        will_auto_confirm = settings_row.auto_accept
+        new_status = "confirmada" if will_auto_confirm else "pendiente"
+
+        # Un bloque liberado por una cancelación o un rechazo conserva la fila de la solicitud anterior,
+        # y availability_slot_id es único: se descarta para que el bloque pueda volver a reservarse.
+        db.query(Mentorship).filter(
+            Mentorship.availability_slot_id == slot.id,
+            Mentorship.status.in_(["cancelada", "rechazada"]),
+        ).delete(synchronize_session=False)
+
+        mentorship = Mentorship(
+            student_user_id=student_id,
+            mentor_user_id=slot.mentor_user_id,
+            availability_slot_id=slot.id,
+            status=new_status,
+            confirmed_at=datetime.now(timezone.utc) if will_auto_confirm else None,
+        )
+        db.add(mentorship)
+
+        # El bloque queda "reservado" tanto si confirma como si queda pendiente —
+        # evita que dos estudiantes soliciten el mismo horario mientras se decide.
+        slot.status = "reservado"
+
+        try:
+            db.commit()
+        except IntegrityError:
+            # Red de seguridad: si aun así otra solicitud tomó el bloque, es un conflicto (409), no un error del servidor.
+            db.rollback()
+            raise HTTPException(status.HTTP_409_CONFLICT, "Este bloque ya no está disponible")
+        db.refresh(mentorship)
+        db.refresh(slot)
+        return mentorship, slot, will_auto_confirm
+    except BaseException:
+        db.rollback()
+        raise
+
+
 @router.post("/mentorships", response_model=MentorshipOut, status_code=status.HTTP_201_CREATED)
 async def request_mentorship(
     payload: MentorshipRequestCreate,
@@ -128,58 +195,9 @@ async def request_mentorship(
     if session.get("role_id") != str(MENTEE_ROLE_ID):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Solo un estudiante puede solicitar mentoría")
 
-    student_id = uuid.UUID(session["user_id"])
-
-    slot = db.query(AvailabilitySlot).filter(AvailabilitySlot.id == payload.availability_slot_id).first()
-    if slot is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bloque de disponibilidad no encontrado")
-
-    # Orden de bloqueo fijo (mentora, luego bloque) para evitar interbloqueos entre solicitudes simultáneas (ASR-26/27).
-    settings_row = _lock_settings(db, slot.mentor_user_id)
-    slot = (
-        db.query(AvailabilitySlot).filter(AvailabilitySlot.id == payload.availability_slot_id)
-        .with_for_update().populate_existing().first()
+    mentorship, slot, will_auto_confirm = await run_in_threadpool(
+        _reservar_bloque, db, uuid.UUID(session["user_id"]), payload.availability_slot_id
     )
-    if slot is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bloque de disponibilidad no encontrado")
-    if slot.status != "libre":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Este bloque ya no está disponible")
-
-    confirmed_count = _confirmed_count_in_week(db, slot.mentor_user_id, slot.date)
-
-    if confirmed_count >= settings_row.weekly_limit:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Esta mentora alcanzó su límite de mentorías esta semana")
-
-    will_auto_confirm = settings_row.auto_accept
-    new_status = "confirmada" if will_auto_confirm else "pendiente"
-
-    # Un bloque liberado por una cancelación o un rechazo conserva la fila de la solicitud anterior,
-    # y availability_slot_id es único: se descarta para que el bloque pueda volver a reservarse.
-    db.query(Mentorship).filter(
-        Mentorship.availability_slot_id == slot.id,
-        Mentorship.status.in_(["cancelada", "rechazada"]),
-    ).delete(synchronize_session=False)
-
-    mentorship = Mentorship(
-        student_user_id=student_id,
-        mentor_user_id=slot.mentor_user_id,
-        availability_slot_id=slot.id,
-        status=new_status,
-        confirmed_at=datetime.now(timezone.utc) if will_auto_confirm else None,
-    )
-    db.add(mentorship)
-
-    # El bloque queda "reservado" tanto si confirma como si queda pendiente —
-    # evita que dos estudiantes soliciten el mismo horario mientras se decide.
-    slot.status = "reservado"
-
-    try:
-        db.commit()
-    except IntegrityError:
-        # Red de seguridad: si aun así otra solicitud tomó el bloque, es un conflicto (409), no un error del servidor.
-        db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, "Este bloque ya no está disponible")
-    db.refresh(mentorship)
 
     if will_auto_confirm:
         await _send_confirmation_emails(db, mentorship, slot)
@@ -233,6 +251,34 @@ async def list_my_student_requests(db: Session = Depends(get_db), session: dict 
     return await _to_out(db, rows)
 
 
+def _aceptar_solicitud(db: Session, mentor_id: uuid.UUID, mentorship_id: uuid.UUID) -> tuple[Mentorship, AvailabilitySlot]:
+    """Confirma una solicitud pendiente en una sola transacción con bloqueo de filas (ver _reservar_bloque)."""
+    try:
+        settings_row = _lock_settings(db, mentor_id)  # serializa el conteo del límite semanal (ASR-27)
+        mentorship = db.query(Mentorship).filter(
+            Mentorship.id == mentorship_id, Mentorship.mentor_user_id == mentor_id
+        ).with_for_update().populate_existing().first()
+        if mentorship is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Solicitud no encontrada")
+        if mentorship.status != "pendiente":
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Esta solicitud ya fue resuelta")
+
+        slot = db.query(AvailabilitySlot).filter(AvailabilitySlot.id == mentorship.availability_slot_id).first()
+
+        if _confirmed_count_in_week(db, mentor_id, slot.date) >= settings_row.weekly_limit:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Aceptar esta solicitud superaría tu límite semanal")
+
+        mentorship.status = "confirmada"
+        mentorship.confirmed_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(mentorship)
+        db.refresh(slot)
+        return mentorship, slot
+    except BaseException:
+        db.rollback()
+        raise
+
+
 @router.post("/mentorships/{mentorship_id}/accept", response_model=MentorshipOut)
 async def accept_mentorship(
     mentorship_id: uuid.UUID,
@@ -240,26 +286,7 @@ async def accept_mentorship(
     session: dict = Depends(require_mentor),
 ):
     """Acceso: rol Mentora."""
-    mentor_id = uuid.UUID(session["user_id"])
-    settings_row = _lock_settings(db, mentor_id)  # serializa el conteo del límite semanal (ASR-27)
-    mentorship = db.query(Mentorship).filter(
-        Mentorship.id == mentorship_id, Mentorship.mentor_user_id == mentor_id
-    ).with_for_update().populate_existing().first()
-    if mentorship is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Solicitud no encontrada")
-    if mentorship.status != "pendiente":
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Esta solicitud ya fue resuelta")
-
-    slot = db.query(AvailabilitySlot).filter(AvailabilitySlot.id == mentorship.availability_slot_id).first()
-
-    if _confirmed_count_in_week(db, mentor_id, slot.date) >= settings_row.weekly_limit:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Aceptar esta solicitud superaría tu límite semanal")
-
-    mentorship.status = "confirmada"
-    mentorship.confirmed_at = datetime.now(timezone.utc)
-    db.commit()
-    db.refresh(mentorship)
-
+    mentorship, slot = await run_in_threadpool(_aceptar_solicitud, db, uuid.UUID(session["user_id"]), mentorship_id)
     await _send_confirmation_emails(db, mentorship, slot)
     return mentorship
 
