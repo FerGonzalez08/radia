@@ -109,6 +109,8 @@ def update_my_settings(
     mentor_id = uuid.UUID(session["user_id"])
     settings_row = _get_or_create_settings(db, mentor_id)
     settings_row.auto_accept = payload.auto_accept
+    if payload.weekly_limit is not None:
+        settings_row.weekly_limit = payload.weekly_limit
     db.commit()
     db.refresh(settings_row)
     return settings_row

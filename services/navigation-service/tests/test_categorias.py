@@ -102,3 +102,14 @@ def test_la_busqueda_excluye_a_quien_ya_no_es_mentora(client, fake_auth, mentee,
 def test_buscar_exige_category_id_valido(client, mentee):
     assert client.get("/search/mentors", headers=mentee.headers).status_code == 422
     assert client.get("/search/mentors", params={"category_id": "x"}, headers=mentee.headers).status_code == 422
+
+
+def test_la_busqueda_de_mentoras_no_devuelve_el_correo(client, db, mentee, mentor, make_category):
+    """TC-NAV-07: la respuesta incluye nombre y categorías, pero ningún dato de contacto."""
+    from app.models.mentor_category import MentorCategory
+    cat = make_category("Datos")
+    db.add(MentorCategory(mentor_user_id=mentor.id, category_id=cat.id))
+    db.commit()
+    r = client.get(f"/search/mentors?category_id={cat.id}", headers=mentee.headers)
+    assert r.status_code == 200 and len(r.json()) == 1
+    assert set(r.json()[0]) == {"mentor_user_id", "nombre", "categories"}

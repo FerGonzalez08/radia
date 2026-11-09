@@ -1,5 +1,6 @@
 """Solicitud, aceptación, rechazo y cancelación de mentorías, configuración de la mentora y límite semanal
 (RQF-026, RQF-028, RQF-029; historias HU017–HU026)."""
+import pytest
 import uuid
 from datetime import date, time, timedelta
 
@@ -287,3 +288,18 @@ def test_solicitudes_simultaneas_no_superan_el_limite_semanal(client, db, fake_a
     ])
     assert codigos.count(201) == 5 and codigos.count(409) == 7 and 500 not in codigos
     assert db.query(Mentorship).filter(Mentorship.status == "confirmada").count() == 5
+
+
+def test_la_mentora_puede_cambiar_su_limite_semanal(client, mentor):
+    """TC-NAV-04: el PUT persiste auto_accept y weekly_limit; sin weekly_limit, el límite no cambia."""
+    assert client.get("/mentors/me/settings", headers=mentor.headers).json()["weekly_limit"] == 5
+    r = client.put("/mentors/me/settings", headers=mentor.headers, json={"auto_accept": True, "weekly_limit": 3})
+    assert r.status_code == 200 and r.json()["weekly_limit"] == 3 and r.json()["auto_accept"] is True
+    r = client.put("/mentors/me/settings", headers=mentor.headers, json={"auto_accept": False})
+    assert r.json()["weekly_limit"] == 3 and r.json()["auto_accept"] is False
+
+
+@pytest.mark.parametrize("limite", [0, -1, 51])
+def test_limite_semanal_fuera_de_rango_se_rechaza(client, mentor, limite):
+    r = client.put("/mentors/me/settings", headers=mentor.headers, json={"auto_accept": False, "weekly_limit": limite})
+    assert r.status_code == 422

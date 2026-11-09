@@ -122,7 +122,6 @@ export interface Category {
 export interface MentorSearchResult {
   mentorUserId: string;
   nombre: string;
-  correo: string;
   categorias: string[];
 }
 

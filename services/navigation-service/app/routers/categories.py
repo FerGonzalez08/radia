@@ -160,7 +160,6 @@ async def search_mentors(
         results.append(MentorSearchResult(
             mentor_user_id=user["id"],
             nombre=user["nombre"],
-            email=user["email"],
             categories=[c[0] for c in mentor_categories],
         ))
     return results

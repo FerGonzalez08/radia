@@ -31,5 +31,4 @@ class MentorCategoriesUpdate(BaseModel):
 class MentorSearchResult(BaseModel):
     mentor_user_id: uuid.UUID
     nombre: str
-    email: str
     categories: list[str]
