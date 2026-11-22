@@ -24,6 +24,7 @@ router = APIRouter(tags=["categories"])
 
 @router.get("/categories", response_model=list[CategoryOut])
 def list_categories(db: Session = Depends(get_db), _session: dict = Depends(get_current_session)):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     return db.query(Category).order_by(Category.name).all()
 
 
@@ -33,6 +34,7 @@ def create_category(
     db: Session = Depends(get_db),
     _admin: dict = Depends(require_admin),
 ):
+    """Acceso: rol Administradora."""
     existing = db.query(Category).filter(Category.name == payload.name).first()
     if existing:
         raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe una categoría con ese nombre")
@@ -51,6 +53,7 @@ def update_category(
     db: Session = Depends(get_db),
     _admin: dict = Depends(require_admin),
 ):
+    """Acceso: rol Administradora."""
     category = db.query(Category).filter(Category.id == category_id).first()
     if category is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Categoría no encontrada")
@@ -74,6 +77,7 @@ def delete_category(
     db: Session = Depends(get_db),
     _admin: dict = Depends(require_admin),
 ):
+    """Acceso: rol Administradora."""
     category = db.query(Category).filter(Category.id == category_id).first()
     if category is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Categoría no encontrada")
@@ -94,6 +98,7 @@ def get_my_categories(
     db: Session = Depends(get_db),
     session: dict = Depends(require_mentor),
 ):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
     return (
         db.query(Category)
@@ -109,6 +114,7 @@ def set_my_categories(
     db: Session = Depends(get_db),
     session: dict = Depends(require_mentor),
 ):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
 
     valid_ids = {c.id for c in db.query(Category.id).filter(Category.id.in_(payload.category_ids)).all()}
@@ -133,6 +139,7 @@ async def search_mentors(
     db: Session = Depends(get_db),
     _session: dict = Depends(get_current_session),
 ):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     mentor_links = db.query(MentorCategory).filter(MentorCategory.category_id == category_id).all()
     matching_mentor_ids = {str(link.mentor_user_id) for link in mentor_links}
 
@@ -153,7 +160,6 @@ async def search_mentors(
         results.append(MentorSearchResult(
             mentor_user_id=user["id"],
             nombre=user["nombre"],
-            email=user["email"],
             categories=[c[0] for c in mentor_categories],
         ))
     return results

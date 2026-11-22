@@ -6,9 +6,9 @@
 // `PATCH /auth/admin/users/:id/role` (auth-service) ya NO EXISTEN — la
 // gestión de roles se extrajo a este microservicio nuevo. UsersPage.tsx usa
 // este módulo, no api.ts, para todo lo relacionado a roles.
-import type { AdminUserRow, RoleAuditEntry } from "../types";
+import type { AdminUserRow, Role, RoleAuditEntry } from "../types";
 import { pickAvatarColor } from "./api";
-import { roleIdToRole } from "./roles";
+import { roleIdToRole, roleToRoleId } from "./roles";
 import { createApiClient } from "./httpClient";
 
 const API_URL = (import.meta.env.VITE_ROLE_API_URL ?? "http://localhost:8002").replace(/\/$/, "");
@@ -35,8 +35,26 @@ function mapUserRow(u: UserWithRoleOut): AdminUserRow {
 }
 
 /** HU010 - Listado de usuarios con su rol actual (solo administrador). */
-export async function listUsersWithRoles(accessToken: string): Promise<AdminUserRow[]> {
-  const result = await request<UserWithRoleOut[]>("/roles/users", { headers: authHeaders(accessToken) });
+export interface ListUsersOptions {
+  /** Texto a buscar en nombre o correo (se resuelve en la base de datos). */
+  q?: string;
+  /** Filtro por rol (se resuelve en la base de datos). */
+  rol?: Role;
+  /** Máximo de filas; sin valor se piden todas. */
+  limit?: number;
+  offset?: number;
+}
+
+export async function listUsersWithRoles(accessToken: string, options: ListUsersOptions = {}): Promise<AdminUserRow[]> {
+  const params = new URLSearchParams();
+  if (options.q?.trim()) params.set("q", options.q.trim());
+  if (options.rol) params.set("role_id", roleToRoleId(options.rol));
+  if (options.limit) params.set("limit", String(options.limit));
+  if (options.offset) params.set("offset", String(options.offset));
+  const query = params.toString();
+  const result = await request<UserWithRoleOut[]>(`/roles/users${query ? `?${query}` : ""}`, {
+    headers: authHeaders(accessToken),
+  });
   return result.map(mapUserRow);
 }
 

@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.config import ADMIN_ROLE_ID, MENTEE_ROLE_ID, MENTOR_ROLE_ID, settings
-from app.core.deps import get_current_user, require_admin
+from app.core.config import ADMIN_ROLE_ID, KNOWN_ROLE_IDS, MENTEE_ROLE_ID, MENTOR_ROLE_ID, settings
+from app.core.deps import SIN_ROL_MENSAJE, get_current_user, require_admin
+from app.core.rate_limit import rate_limit
 from app.core.email import send_password_reset_email, send_verification_email
 from app.core.security import (
     create_access_token,
@@ -16,6 +17,7 @@ from app.core.security import (
     hash_opaque_token,
     hash_password,
     verify_password,
+    DUMMY_PASSWORD_HASH,
 )
 from app.models.login_attempt import LoginAttempt
 from app.models.refresh_token import RefreshToken
@@ -37,13 +39,14 @@ def _get_client_ip(request: Request) -> str:
 
 
 def _issue_token_pair(db: Session, user: User) -> TokenPair:
-    access_token = create_access_token(str(user.id), str(user.role_id))
+    family_id = uuid.uuid4()
+    access_token = create_access_token(str(user.id), str(user.role_id), str(family_id))
 
     refresh_plain = generate_opaque_token()
     refresh_token = RefreshToken(
         user_id=user.id,
         token_hash=hash_opaque_token(refresh_plain),
-        family_id=uuid.uuid4(),
+        family_id=family_id,
         expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
     db.add(refresh_token)
@@ -58,8 +61,12 @@ def _calculate_age(birth_date: date) -> int:
         age -= 1
     return age
 
-@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserOut, status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("register", "RATE_LIMIT_REGISTER_PER_MIN"))],
+)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status.HTTP_409_CONFLICT, "Ese correo ya está registrado")
@@ -125,8 +132,12 @@ def _check_login_lockout(db: Session, email: str) -> datetime | None:
     unlock_at = last_failed.created_at + timedelta(minutes=15)
     return unlock_at if now < unlock_at else None
 
-@router.post("/login", response_model=TokenPair)
+@router.post(
+    "/login", response_model=TokenPair,
+    dependencies=[Depends(rate_limit("login", "RATE_LIMIT_LOGIN_PER_MIN"))],
+)
 def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     ip_address = _get_client_ip(request)
 
     unlock_at = _check_login_lockout(db, payload.email)
@@ -138,7 +149,9 @@ def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)):
         )
     user = db.query(User).filter(User.email == payload.email).first()
 
-    success = user is not None and verify_password(payload.password, user.password_hash)
+    # Siempre se ejecuta una verificación bcrypt, exista o no la cuenta (tiempo de respuesta uniforme).
+    password_ok = verify_password(payload.password, user.password_hash if user else DUMMY_PASSWORD_HASH)
+    success = user is not None and password_ok
 
     db.add(LoginAttempt(
         user_id=user.id if user else None,
@@ -157,11 +170,15 @@ def login(payload: UserLogin, request: Request, db: Session = Depends(get_db)):
     if not user.is_verified:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Email not verified")
 
+    if user.role_id not in KNOWN_ROLE_IDS:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, SIN_ROL_MENSAJE)
+
     return _issue_token_pair(db, user)
 
 
 @router.post("/refresh", response_model=TokenPair)
 def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     token_hash = hash_opaque_token(payload.refresh_token)
     stored = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
 
@@ -187,7 +204,7 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
     # Rotación: se revoca el token usado y se emite uno nuevo en la misma familia.
     stored.revoked_at = datetime.now(timezone.utc)
 
-    access_token = create_access_token(str(user.id), str(user.role_id))
+    access_token = create_access_token(str(user.id), str(user.role_id), str(stored.family_id))
     new_plain = generate_opaque_token()
     new_refresh = RefreshToken(
         user_id=user.id,
@@ -203,6 +220,7 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     token_hash = hash_opaque_token(payload.refresh_token)
     stored = db.query(RefreshToken).filter(RefreshToken.token_hash == token_hash).first()
 
@@ -220,6 +238,7 @@ def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
 def validate_session(current_user: User = Depends(get_current_user)):
     # get_current_user ya valida firma, expiración, existencia y is_active.
     # Este endpoint es el único punto de verdad que otros microservicios consultan.
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     return ValidateSessionResponse(
         valid=True,
         user_id=current_user.id,
@@ -229,11 +248,13 @@ def validate_session(current_user: User = Depends(get_current_user)):
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     return current_user
 
 
 @router.post("/verify-email", status_code=status.HTTP_204_NO_CONTENT)
 def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     token_hash = hash_opaque_token(payload.token)
     record = db.query(VerificationToken).filter(
         VerificationToken.token_hash == token_hash,
@@ -250,11 +271,62 @@ def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
     return None
 
 
-@router.post("/password-reset/request", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/resend-verification", status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(rate_limit("resend", "RATE_LIMIT_RESET_PER_MIN"))],
+)
+def resend_verification(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Reenvía el enlace de verificación de correo a una cuenta que aún no está verificada.
+
+    Responde 204 exista o no la cuenta, esté o no verificada y haya o no alcanzado el límite (máximo 5 envíos por hora y
+    cuenta), para no revelar qué correos están registrados. Acceso: público (no requiere sesión).
+    """
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user is None or user.is_verified or not user.is_active:
+        return None
+
+    enviados_ultima_hora = db.query(VerificationToken).filter(
+        VerificationToken.user_id == user.id,
+        VerificationToken.type == "email_verification",
+        VerificationToken.created_at >= datetime.now(timezone.utc) - timedelta(hours=1),
+    ).count()
+    if enviados_ultima_hora >= settings.RESET_REQUESTS_PER_HOUR:
+        return None
+
+    verification_plain = generate_opaque_token()
+    db.add(VerificationToken(
+        user_id=user.id,
+        token_hash=hash_opaque_token(verification_plain),
+        type="email_verification",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+    ))
+    db.commit()
+    try:
+        send_verification_email(user.email, verification_plain)
+    except Exception:
+        pass  # misma respuesta aunque falle el envío
+    return None
+
+
+@router.post(
+    "/password-reset/request", status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(rate_limit("reset", "RATE_LIMIT_RESET_PER_MIN"))],
+)
 def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     user = db.query(User).filter(User.email == payload.email).first()
 
+    # TC-AUT-18: máximo de solicitudes por cuenta y hora. Las que exceden se ignoran sin generar token ni correo,
+    # y la respuesta es la misma (no revela si la cuenta existe ni si alcanzó el límite).
+    solicitudes_ultima_hora = 0
     if user is not None:
+        solicitudes_ultima_hora = db.query(VerificationToken).filter(
+            VerificationToken.user_id == user.id,
+            VerificationToken.type == "password_reset",
+            VerificationToken.created_at >= datetime.now(timezone.utc) - timedelta(hours=1),
+        ).count()
+
+    if user is not None and solicitudes_ultima_hora < settings.RESET_REQUESTS_PER_HOUR:
         reset_plain = generate_opaque_token()
         db.add(VerificationToken(
             user_id=user.id,
@@ -276,6 +348,7 @@ def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(
 
 @router.post("/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
 def confirm_password_reset(payload: PasswordResetConfirm, db: Session = Depends(get_db)):
+    """Acceso: público (no requiere sesión)."""
     token_hash = hash_opaque_token(payload.token)
     record = db.query(VerificationToken).filter(
         VerificationToken.token_hash == token_hash,

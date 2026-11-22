@@ -34,6 +34,7 @@ def list_my_availability(
     db: Session = Depends(get_db),
     session: dict = Depends(require_mentor),
 ):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
     return (
         db.query(AvailabilitySlot)
@@ -49,6 +50,7 @@ def create_availability_slot(
     db: Session = Depends(get_db),
     session: dict = Depends(require_mentor),
 ):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
 
     if payload.end_time <= payload.start_time:
@@ -76,6 +78,7 @@ def delete_availability_slot(
     db: Session = Depends(get_db),
     session: dict = Depends(require_mentor),
 ):
+    """Acceso: rol Mentora."""
     mentor_id = uuid.UUID(session["user_id"])
     slot = db.query(AvailabilitySlot).filter(
         AvailabilitySlot.id == slot_id,
@@ -111,6 +114,7 @@ def list_mentor_public_availability(
     _session: dict = Depends(get_current_session),
 ):
     # Vista pública (para el estudiante) — solo bloques libres, no todos.
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     return (
         db.query(AvailabilitySlot)
         .filter(AvailabilitySlot.mentor_user_id == mentor_id, AvailabilitySlot.status == "libre")

@@ -35,14 +35,21 @@ def test_administrador_accede(client, admin):
     assert client.get("/roles/users", headers=headers).status_code == 200
 
 
-def test_si_auth_service_no_responde_la_sesion_se_considera_invalida(client, fake_auth, admin):
+def test_si_auth_service_no_responde_se_deniega_el_acceso_con_503(client, fake_auth, admin):
+    """Falla cerrada (no se concede acceso) pero con un 503 que indica que el servicio de autenticación no está disponible."""
     _, headers = admin
     fake_auth.down = True
-    assert client.get("/roles/users", headers=headers).status_code == 401
+    assert client.get("/roles/users", headers=headers).status_code == 503
 
 
-def test_listar_roles_es_publico_y_devuelve_el_catalogo(client):
-    r = client.get("/roles")
+def test_listar_roles_exige_sesion(client):
+    """TC-SEG-13: el catálogo de roles ya no es público."""
+    assert client.get("/roles").status_code == 401
+
+
+def test_listar_roles_con_sesion_devuelve_el_catalogo(client, fake_auth):
+    headers = fake_auth.login_as(fake_auth.add_user(MENTEE_ROLE_ID))
+    r = client.get("/roles", headers=headers)
     assert r.status_code == 200
     assert {x["name"] for x in r.json()} == {"estudiante", "mentora", "administrador"}
 

@@ -1,11 +1,13 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from app.core.clients import has_active_mentorship, validate_session
+from app.core.config import settings
 from app.core.connection_manager import manager
+from app.core.rate_limit import message_limiter
 from app.core.database import SessionLocal
 from app.models.last_seen import LastSeen
 from app.models.message import Message
@@ -18,20 +20,33 @@ router = APIRouter()
 async def chat_websocket(websocket: WebSocket, other_user_id: uuid.UUID, token: str = Query(...)):
     try:
         session = await validate_session(token)
+    except HTTPException as exc:
+        # 1013 = «intenta de nuevo más tarde» (auth-service caído): el cliente debe reintentar, no darse por vencido.
+        await websocket.close(code=1013 if exc.status_code == 503 else 4401)  # 4401: código propio, token inválido
+        return
     except Exception:
-        await websocket.close(code=4401)  # código propio: token inválido
+        await websocket.close(code=4401)
         return
 
     my_id_str = session["user_id"]
     my_id = uuid.UUID(my_id_str)
 
-    if not await has_active_mentorship(my_id_str, str(other_user_id)):
+    try:
+        tiene_mentoria = await has_active_mentorship(my_id_str, str(other_user_id))
+    except HTTPException:
+        await websocket.close(code=1013)  # navigation-service no responde: reintentar más tarde
+        return
+    if not tiene_mentoria:
         await websocket.close(code=4403)  # código propio: sin mentoría activa
         return
 
     db: Session = SessionLocal()
     try:
-        conversation = get_or_create_conversation(db, my_id, session["role_id"], other_user_id)
+        conversation_id = get_or_create_conversation(db, my_id, session["role_id"], other_user_id).id
+        # Se cierra la transacción abierta por la consulta: con ella pendiente la sesión retendría una conexión del
+        # pool mientras la usuaria está conectada sin escribir (DEF-001: ~15 conexiones agotaban el pool y el servicio
+        # dejaba de responder). Tras cada commit no se vuelve a leer ningún atributo del modelo, por la misma razón.
+        db.rollback()
 
         await manager.connect(my_id_str, websocket)
 
@@ -44,8 +59,25 @@ async def chat_websocket(websocket: WebSocket, other_user_id: uuid.UUID, token: 
             if not content:
                 continue  # RQF-016 RN-01: no se procesa un mensaje vacío.
 
+            if len(content) > settings.MAX_MESSAGE_LENGTH:
+                # TC-CHT-04: error controlado; la conexión sigue abierta y no se guarda nada.
+                await websocket.send_json({
+                    "type": "error", "code": "message_too_long",
+                    "detail": f"El mensaje supera los {settings.MAX_MESSAGE_LENGTH} caracteres.",
+                })
+                continue
+
+            espera = message_limiter.retry_after(my_id_str, settings.MESSAGES_PER_MINUTE)
+            if espera is not None:
+                # TC-CHT-13 / ASR-25: se rechaza el exceso sin afectar a otras usuarias.
+                await websocket.send_json({
+                    "type": "error", "code": "rate_limited", "retry_after": espera,
+                    "detail": f"Estás enviando mensajes muy rápido. Intenta de nuevo en {espera} segundo(s).",
+                })
+                continue
+
             message = Message(
-                conversation_id=conversation.id,
+                conversation_id=conversation_id,
                 sender_user_id=my_id,
                 content=content,
                 status="enviado",
@@ -53,23 +85,27 @@ async def chat_websocket(websocket: WebSocket, other_user_id: uuid.UUID, token: 
             db.add(message)
             db.commit()
             db.refresh(message)
+            message_id, created_at = str(message.id), message.created_at.isoformat()
+            db.rollback()  # libera la conexión hasta el próximo mensaje
 
             delivered = await manager.send_to(str(other_user_id), {
                 "type": "message",
-                "id": str(message.id),
+                "id": message_id,
                 "sender_user_id": my_id_str,
-                "content": message.content,
-                "created_at": message.created_at.isoformat(),
+                "content": content,
+                "created_at": created_at,
             })
 
-            message.status = "entregado" if delivered else "enviado"
-            db.commit()
+            final_status = "entregado" if delivered else "enviado"
+            if delivered:
+                db.query(Message).filter(Message.id == message_id).update({"status": final_status})
+                db.commit()
 
             # Confirmación de vuelta al remitente (RQF-016 CA-01, RQF-022 CA-01).
             await websocket.send_json({
                 "type": "ack",
-                "id": str(message.id),
-                "status": message.status,
+                "id": message_id,
+                "status": final_status,
             })
 
     except WebSocketDisconnect:

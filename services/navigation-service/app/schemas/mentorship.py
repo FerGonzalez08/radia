@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime, time
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class MentorshipRequestCreate(BaseModel):
@@ -37,3 +37,5 @@ class MentorSettingsOut(BaseModel):
 
 class MentorSettingsUpdate(BaseModel):
     auto_accept: bool
+    # Opcional: si no se envía, el límite semanal no cambia (compatible con clientes anteriores).
+    weekly_limit: int | None = Field(default=None, ge=1, le=50)

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.request_id import RequestIdMiddleware
 from app.core.database import Base, SessionLocal, engine
 from app.models import availability_slot, category, mentor_category, mentor_settings, mentorship  # noqa: F401
 from app.models.category import Category
@@ -19,6 +20,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestIdMiddleware)  # el último que se agrega es el más externo: envuelve también las respuestas de error
 
 app.include_router(categories.router)
 app.include_router(availability.router)
@@ -39,4 +41,5 @@ def seed_categories():
 
 @app.get("/health")
 def health():
+    """Acceso: público (no requiere sesión)."""
     return {"status": "ok"}

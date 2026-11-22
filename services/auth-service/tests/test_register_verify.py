@@ -1,4 +1,5 @@
 """Registro y verificación de correo (RQF-001, HU001/HU002)."""
+import pytest
 from datetime import date, datetime, timedelta, timezone
 
 from app.core.config import MENTEE_ROLE_ID
@@ -92,3 +93,47 @@ def test_verificar_correo_con_token_inexistente_o_vencido_o_de_otro_tipo(client,
     assert client.post("/auth/verify-email", json={"token": "no-existe"}).status_code == 400
     assert client.post("/auth/verify-email", json={"token": "vencido"}).status_code == 400
     assert client.post("/auth/verify-email", json={"token": "reset"}).status_code == 400
+
+
+@pytest.mark.parametrize("password", ["Ab1cdef", "soloLetrasAqui", "123456789012"])
+def test_registro_rechaza_contrasena_que_incumple_la_politica(client, password):
+    """TC-AUT-16: 7 caracteres, solo letras y solo números se rechazan con el mensaje de la política."""
+    body = dict(email="politica@pruebas.com", password=password, nombre="Ana", telefono="3000000000",
+                sexo="F", fecha_nacimiento="1995-01-01")
+    r = client.post("/auth/register", json=body)
+    assert r.status_code == 422
+    assert "La contraseña debe tener mínimo 8 caracteres alfanuméricos" in r.text
+
+
+def test_restablecer_contrasena_aplica_la_misma_politica(client):
+    r = client.post("/auth/password-reset/confirm", json={"token": "x", "new_password": "sololetras"})
+    assert r.status_code == 422
+
+
+def test_reenviar_verificacion_envia_un_enlace_nuevo_que_funciona(client, make_user, sent_emails, db):
+    """TC-AUT-20: la cuenta sin verificar recibe un correo nuevo y el enlace verifica la cuenta."""
+    make_user("sinverificar@pruebas.com", verified=False)
+    assert client.post("/auth/resend-verification", json={"email": "sinverificar@pruebas.com"}).status_code == 204
+    assert [e[0] for e in sent_emails] == ["verify"]
+    assert client.post("/auth/verify-email", json={"token": sent_emails[0][2]}).status_code == 204
+    assert db.query(User).filter_by(email="sinverificar@pruebas.com").one().is_verified is True
+
+
+def test_reenviar_verificacion_no_revela_si_la_cuenta_existe_ni_envia_a_cuentas_verificadas(client, make_user, sent_emails):
+    make_user("verificada@pruebas.com", verified=True)
+    for correo in ("verificada@pruebas.com", "nadie@pruebas.com"):
+        assert client.post("/auth/resend-verification", json={"email": correo}).status_code == 204
+    assert sent_emails == []
+
+
+def test_reenviar_verificacion_tiene_limite_por_hora(client, make_user, sent_emails):
+    from app.core.config import settings
+    previo = settings.RATE_LIMIT_RESET_PER_MIN
+    settings.RATE_LIMIT_RESET_PER_MIN = 0
+    try:
+        make_user("limite2@pruebas.com", verified=False)
+        for _ in range(8):
+            client.post("/auth/resend-verification", json={"email": "limite2@pruebas.com"})
+    finally:
+        settings.RATE_LIMIT_RESET_PER_MIN = previo
+    assert len(sent_emails) == 5

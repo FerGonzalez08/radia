@@ -80,8 +80,9 @@ locals {
       health     = "/health"
       websockets = false
       settings = merge(local.backend_common, {
-        DATABASE_URL     = local.db_urls["role"]
-        AUTH_SERVICE_URL = local.urls["auth"]
+        DATABASE_URL           = local.db_urls["role"]
+        AUTH_SERVICE_URL       = local.urls["auth"]
+        NAVIGATION_SERVICE_URL = local.urls["navigation"]
       })
     }
     navigation = {
@@ -218,7 +219,7 @@ resource "azurerm_linux_web_app" "app" {
   site_config {
     always_on                         = true
     health_check_path                 = local.apps[each.key].health
-    health_check_eviction_time_in_min = 5
+    health_check_eviction_time_in_min = 2
     websockets_enabled                = local.apps[each.key].websockets
     ftps_state                        = "Disabled"
     http2_enabled                     = true

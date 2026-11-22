@@ -2,39 +2,79 @@ import httpx
 from fastapi import HTTPException, status
 
 from app.core.config import settings
+from app.core.request_id import HEADER as REQUEST_ID_HEADER, request_id_var
+
+TIMEOUT_S = 5.0
+AUTH_NO_DISPONIBLE = "El servicio de autenticación no está disponible. Intenta de nuevo en unos segundos."
+
+
+async def _enviar(metodo: str, url: str, mensaje: str, **kwargs) -> httpx.Response:
+    """Llama a otro servicio; si no responde (caído, sin red o sin tiempo) devuelve 503 en lugar de un 500 sin controlar."""
+    # Se reenvía el X-Request-ID de la petición en curso para correlacionar la operación entre servicios (TC-NFR-10).
+    kwargs["headers"] = {**kwargs.get("headers", {}), REQUEST_ID_HEADER: request_id_var.get()}
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT_S) as client:
+            return await client.request(metodo, url, **kwargs)
+    except httpx.RequestError:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, mensaje)
 
 
 async def validate_session(access_token: str) -> dict:
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            f"{settings.AUTH_SERVICE_URL}/auth/validate-session",
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
+    response = await _enviar(
+        "GET", f"{settings.AUTH_SERVICE_URL}/auth/validate-session", AUTH_NO_DISPONIBLE,
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    if response.status_code >= 500:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, AUTH_NO_DISPONIBLE)
     if response.status_code != 200:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired session")
     return response.json()
 
 
 async def list_users_internal() -> list[dict]:
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            f"{settings.AUTH_SERVICE_URL}/internal/users",
-            headers={"X-Internal-Service-Key": settings.INTERNAL_SERVICE_KEY},
-        )
+    response = await _enviar(
+        "GET", f"{settings.AUTH_SERVICE_URL}/internal/users", AUTH_NO_DISPONIBLE,
+        headers={"X-Internal-Service-Key": settings.INTERNAL_SERVICE_KEY},
+    )
+    if response.status_code != 200:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Auth Service unavailable")
+    return response.json()
+
+
+async def list_users_page_internal(q: str | None, role_id: str | None, limit: int | None, offset: int) -> list[dict]:
+    """Una página de usuarias, con filtro y paginación resueltos en la base de datos de Auth Service."""
+    params = {k: v for k, v in {"q": q, "role_id": role_id, "limit": limit, "offset": offset}.items() if v not in (None, "")}
+    response = await _enviar(
+        "GET", f"{settings.AUTH_SERVICE_URL}/internal/users", AUTH_NO_DISPONIBLE,
+        headers={"X-Internal-Service-Key": settings.INTERNAL_SERVICE_KEY}, params=params,
+    )
     if response.status_code != 200:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Auth Service unavailable")
     return response.json()
 
 
 async def update_user_role_internal(user_id: str, role_id: str) -> dict:
-    async with httpx.AsyncClient() as client:
-        response = await client.patch(
-            f"{settings.AUTH_SERVICE_URL}/internal/users/{user_id}/role",
-            headers={"X-Internal-Service-Key": settings.INTERNAL_SERVICE_KEY},
-            json={"role_id": role_id},
-        )
+    response = await _enviar(
+        "PATCH", f"{settings.AUTH_SERVICE_URL}/internal/users/{user_id}/role", AUTH_NO_DISPONIBLE,
+        headers={"X-Internal-Service-Key": settings.INTERNAL_SERVICE_KEY},
+        json={"role_id": role_id},
+    )
     if response.status_code == 404:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
     if response.status_code != 200:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Auth Service unavailable")
     return response.json()
+
+
+async def cancel_mentor_mentorships_internal(mentor_id: str) -> int:
+    """Pide a Navigation Service cancelar las mentorías activas de la mentora. Devuelve cuántas canceló."""
+    if not settings.NAVIGATION_SERVICE_URL:
+        return 0
+    response = await _enviar(
+        "POST", f"{settings.NAVIGATION_SERVICE_URL}/internal/mentors/{mentor_id}/cancel-mentorships",
+        "El servicio de mentorías no está disponible. Intenta de nuevo en unos segundos.",
+        headers={"X-Internal-Service-Key": settings.INTERNAL_SERVICE_KEY},
+    )
+    if response.status_code != 200:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Navigation Service unavailable")
+    return response.json().get("cancelled", 0)

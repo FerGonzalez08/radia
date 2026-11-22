@@ -181,3 +181,87 @@ def test_require_admin_distingue_administrador_de_otros_roles(make_user):
     with pytest.raises(HTTPException) as exc:
         require_admin(make_user(email="m@pruebas.com", role_id=MENTOR_ROLE_ID))
     assert exc.value.status_code == 403
+
+
+def test_login_verifica_bcrypt_aunque_el_correo_no_exista(client, monkeypatch):
+    """TC-SEG-01: el login con un correo inexistente ejecuta la misma verificación bcrypt que con uno existente."""
+    from app.routers import auth as auth_router
+    llamadas = []
+    original = auth_router.verify_password
+    monkeypatch.setattr(auth_router, "verify_password", lambda p, h: llamadas.append(h) or original(p, h))
+    r = client.post("/auth/login", json={"email": "nadie@pruebas.com", "password": "Cualquiera-123"})
+    assert r.status_code == 401
+    assert llamadas == [auth_router.DUMMY_PASSWORD_HASH]
+
+
+def test_login_responde_429_al_superar_el_limite_por_ip(client, monkeypatch):
+    """TC-SEG-08: una ráfaga de logins desde la misma IP recibe 429 con Retry-After tras el umbral."""
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "RATE_LIMIT_LOGIN_PER_MIN", 5)
+    cuerpo = {"email": "nadie@pruebas.com", "password": "Cualquiera-123"}
+    codigos = [client.post("/auth/login", json=cuerpo).status_code for _ in range(8)]
+    assert codigos[:5] == [401] * 5
+    assert codigos[5:] == [429] * 3
+    assert "retry-after" in client.post("/auth/login", json=cuerpo).headers
+
+
+def test_el_limite_de_una_ip_no_afecta_a_otra(client, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "RATE_LIMIT_LOGIN_PER_MIN", 2)
+    cuerpo = {"email": "nadie@pruebas.com", "password": "Cualquiera-123"}
+    for _ in range(3):
+        client.post("/auth/login", json=cuerpo, headers={"X-Forwarded-For": "10.0.0.1"})
+    assert client.post("/auth/login", json=cuerpo, headers={"X-Forwarded-For": "10.0.0.1"}).status_code == 429
+    assert client.post("/auth/login", json=cuerpo, headers={"X-Forwarded-For": "10.0.0.2"}).status_code == 401
+
+
+def test_el_access_token_deja_de_valer_al_cerrar_la_sesion(client, make_user):
+    """TC-AUT-17: tras el logout, el access token responde 401 de inmediato (ASR-11: <= 2 s)."""
+    make_user()
+    tokens = login(client).json()
+    cabecera = {"Authorization": f"Bearer {tokens['access_token']}"}
+    assert client.get("/auth/validate-session", headers=cabecera).status_code == 200
+    assert client.post("/auth/logout", json={"refresh_token": tokens["refresh_token"]}).status_code == 204
+    assert client.get("/auth/validate-session", headers=cabecera).status_code == 401
+
+
+def test_el_access_token_sigue_valiendo_tras_renovar_la_sesion(client, make_user):
+    make_user()
+    tokens = login(client).json()
+    nuevos = client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]}).json()
+    for access in (tokens["access_token"], nuevos["access_token"]):
+        assert client.get("/auth/validate-session", headers={"Authorization": f"Bearer {access}"}).status_code == 200
+
+
+def test_cuenta_sin_rol_valido_queda_bloqueada(client, db, make_user):
+    """TC-AUT-23: con un rol fuera del catálogo no puede iniciar sesión ni usar una sesión previa."""
+    import uuid
+    u = make_user()
+    tokens = login(client).json()
+    u.role_id = uuid.uuid4()
+    db.commit()
+    r = login(client)
+    assert r.status_code == 403 and "rol" in r.json()["detail"]
+    previa = client.get("/auth/validate-session", headers={"Authorization": f"Bearer {tokens['access_token']}"})
+    assert previa.status_code == 403
+
+
+def test_created_at_no_depende_del_default_de_la_base_de_datos(client, db, make_user):
+    """Regresión: en producción el default de created_at quedó fijo en la fecha de creación de la tabla.
+
+    Se reproduce ese estado y se comprueba que el bloqueo por 5 intentos fallidos sigue funcionando.
+    """
+    from sqlalchemy import text
+    tablas = ("login_attempts", "refresh_tokens", "verification_tokens")
+    for t in tablas:
+        db.execute(text(f"ALTER TABLE {t} ALTER COLUMN created_at SET DEFAULT '2020-01-01 00:00:00+00'::timestamptz"))
+    db.commit()
+    try:
+        make_user()
+        codigos = [login(client, password="incorrecta-123").status_code for _ in range(5)]
+        assert codigos == [401] * 5
+        assert login(client).status_code == 429  # bloqueada aunque el default de la base sea una fecha antigua
+    finally:
+        for t in tablas:
+            db.execute(text(f"ALTER TABLE {t} ALTER COLUMN created_at SET DEFAULT now()"))
+        db.commit()

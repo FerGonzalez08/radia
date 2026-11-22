@@ -52,6 +52,7 @@ async def get_history(
     db: Session = Depends(get_db),
     session: dict = Depends(get_current_session),
 ):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     my_id = uuid.UUID(session["user_id"])
 
     if not await has_active_mentorship(str(my_id), str(other_user_id)):
@@ -75,6 +76,7 @@ async def mark_as_read(
     db: Session = Depends(get_db),
     session: dict = Depends(get_current_session),
 ):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     my_id = uuid.UUID(session["user_id"])
 
     if not await has_active_mentorship(str(my_id), str(other_user_id)):
@@ -97,6 +99,7 @@ async def get_status(
     db: Session = Depends(get_db),
     session: dict = Depends(get_current_session),
 ):
+    """Acceso: cualquier usuaria autenticada (Mentee, Mentora o Administradora)."""
     my_id = uuid.UUID(session["user_id"])
 
     if not await has_active_mentorship(str(my_id), str(other_user_id)):

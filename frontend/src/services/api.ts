@@ -22,9 +22,16 @@ const mapAuthError: ErrorMapper = (status, detail) => {
     return new ApiError("Correo o contraseña incorrectos.", { code: "INVALID_CREDENTIALS" });
   }
 
+  if (status === 400 && text === "Invalid or expired reset token") {
+    return new ApiError("Este enlace ha expirado o ya fue utilizado. Solicita uno nuevo.", { code: "RESET_LINK_EXPIRED" });
+  }
+
   if (status === 403) {
     if (text === "Email not verified") {
       return new ApiError("Debes verificar tu cuenta antes de iniciar sesión.", { code: "NOT_VERIFIED" });
+    }
+    if (text?.startsWith("Tu cuenta aún no tiene un rol")) {
+      return new ApiError(text, { code: "NO_ROLE" });
     }
     if (text === "Account is deactivated") {
       return new ApiError("Tu cuenta está desactivada. Contacta a un administrador.", { code: "ACCOUNT_DISABLED" });
@@ -157,5 +164,14 @@ export async function resetPassword(token: string, password: string): Promise<vo
   await request<void>("/auth/password-reset/confirm", {
     method: "POST",
     body: JSON.stringify({ token, new_password: password }),
+  });
+}
+
+// --- Reenvío del enlace de verificación (TC-AUT-20) ------------------------
+
+export async function resendVerification(correo: string): Promise<void> {
+  await request<void>("/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({ email: correo.trim() }),
   });
 }

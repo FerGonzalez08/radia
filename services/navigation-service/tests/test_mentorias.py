@@ -1,5 +1,6 @@
 """Solicitud, aceptación, rechazo y cancelación de mentorías, configuración de la mentora y límite semanal
 (RQF-026, RQF-028, RQF-029; historias HU017–HU026)."""
+import pytest
 import uuid
 from datetime import date, time, timedelta
 
@@ -251,3 +252,77 @@ def test_confirmar_no_falla_si_alguna_de_las_dos_personas_ya_no_existe(client, f
     r = client.post(f"/mentorships/{m.id}/accept", headers=mentor.headers)
     assert r.status_code == 200 and r.json()["status"] == "confirmada"
     assert emails == []
+
+
+# --- Concurrencia (ASR-26 y ASR-27) ---
+
+def _en_paralelo(tareas):
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=len(tareas)) as pool:
+        return [f.result() for f in [pool.submit(t) for t in tareas]]
+
+
+def test_solicitudes_simultaneas_del_mismo_bloque_dejan_una_sola_mentoria(client, db, fake_auth, mentor, make_slot):
+    """TC-CON-26: una gana (201) y las demás reciben 409; ninguna recibe 500."""
+    from app.core.config import MENTEE_ROLE_ID
+    slot = make_slot(mentor.id)
+    estudiantes = [fake_auth.login_as(fake_auth.add_user(MENTEE_ROLE_ID)) for _ in range(8)]
+    codigos = _en_paralelo([
+        (lambda h=h: client.post("/mentorships", headers=h, json={"availability_slot_id": str(slot.id)}).status_code)
+        for h in estudiantes
+    ])
+    assert sorted(codigos) == [201] + [409] * 7
+    assert db.query(Mentorship).filter(Mentorship.availability_slot_id == slot.id).count() == 1
+
+
+def test_solicitudes_simultaneas_no_superan_el_limite_semanal(client, db, fake_auth, mentor, make_slot):
+    """TC-CON-27: con aceptación automática y límite 5, 12 bloques de la misma semana pedidos a la vez dan 5 confirmadas."""
+    from datetime import time
+    from app.core.config import MENTEE_ROLE_ID
+    client.put("/mentors/me/settings", headers=mentor.headers, json={"auto_accept": True})
+    slots = [make_slot(mentor.id, inicio=time(h, 0), fin=time(h, 30)) for h in range(6, 18)]
+    estudiantes = [fake_auth.login_as(fake_auth.add_user(MENTEE_ROLE_ID)) for _ in slots]
+    codigos = _en_paralelo([
+        (lambda h=h, sl=sl: client.post("/mentorships", headers=h, json={"availability_slot_id": str(sl.id)}).status_code)
+        for h, sl in zip(estudiantes, slots)
+    ])
+    assert codigos.count(201) == 5 and codigos.count(409) == 7 and 500 not in codigos
+    assert db.query(Mentorship).filter(Mentorship.status == "confirmada").count() == 5
+
+
+def test_la_mentora_puede_cambiar_su_limite_semanal(client, mentor):
+    """TC-NAV-04: el PUT persiste auto_accept y weekly_limit; sin weekly_limit, el límite no cambia."""
+    assert client.get("/mentors/me/settings", headers=mentor.headers).json()["weekly_limit"] == 5
+    r = client.put("/mentors/me/settings", headers=mentor.headers, json={"auto_accept": True, "weekly_limit": 3})
+    assert r.status_code == 200 and r.json()["weekly_limit"] == 3 and r.json()["auto_accept"] is True
+    r = client.put("/mentors/me/settings", headers=mentor.headers, json={"auto_accept": False})
+    assert r.json()["weekly_limit"] == 3 and r.json()["auto_accept"] is False
+
+
+@pytest.mark.parametrize("limite", [0, -1, 51])
+def test_limite_semanal_fuera_de_rango_se_rechaza(client, mentor, limite):
+    r = client.put("/mentors/me/settings", headers=mentor.headers, json={"auto_accept": False, "weekly_limit": limite})
+    assert r.status_code == 422
+
+
+def test_cancelar_las_mentorias_de_una_mentora_libera_los_bloques(client, db, mentee, mentee2, mentor, make_slot, make_mentorship):
+    """TC-ROL-04 (lado Navigation): pendientes y confirmadas pasan a canceladas, los bloques quedan libres y el chat se bloquea."""
+    from tests.conftest import KEY
+    s1 = make_slot(mentor.id, inicio=time(9, 0), fin=time(10, 0))
+    s2 = make_slot(mentor.id, inicio=time(11, 0), fin=time(12, 0))
+    m1 = make_mentorship(mentee.id, mentor.id, s1, status="confirmada")
+    m2 = make_mentorship(mentee2.id, mentor.id, s2, status="pendiente")
+
+    r = client.post(f"/internal/mentors/{mentor.id}/cancel-mentorships", headers=KEY)
+    assert r.status_code == 200 and r.json() == {"cancelled": 2}
+    db.expire_all()
+    assert {db.get(Mentorship, m1.id).status, db.get(Mentorship, m2.id).status} == {"cancelada"}
+    assert {db.get(AvailabilitySlot, s1.id).status, db.get(AvailabilitySlot, s2.id).status} == {"libre"}
+    activa = client.get("/internal/mentorships/active", params={"user_a": str(mentee.id), "user_b": str(mentor.id)}, headers=KEY)
+    assert activa.json()["active"] is False
+    assert client.post(f"/internal/mentors/{mentor.id}/cancel-mentorships", headers=KEY).json() == {"cancelled": 0}
+
+
+def test_cancelar_mentorias_de_una_mentora_exige_la_llave_interna(client, mentor):
+    assert client.post(f"/internal/mentors/{mentor.id}/cancel-mentorships").status_code == 422
+    assert client.post(f"/internal/mentors/{mentor.id}/cancel-mentorships", headers={"X-Internal-Service-Key": "mala"}).status_code == 403

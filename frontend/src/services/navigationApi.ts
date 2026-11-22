@@ -27,7 +27,6 @@ interface CategoryOut {
 interface MentorSearchResultOut {
   mentor_user_id: string;
   nombre: string;
-  email: string;
   categories: string[];
 }
 
@@ -66,7 +65,7 @@ function mapCategory(c: CategoryOut): Category {
 }
 
 function mapSearchResult(r: MentorSearchResultOut): MentorSearchResult {
-  return { mentorUserId: r.mentor_user_id, nombre: r.nombre, correo: r.email, categorias: r.categories };
+  return { mentorUserId: r.mentor_user_id, nombre: r.nombre, categorias: r.categories };
 }
 
 function mapSlot(s: AvailabilitySlotOut): AvailabilitySlot {

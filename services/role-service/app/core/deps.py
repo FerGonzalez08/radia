@@ -7,6 +7,15 @@ from app.core.config import ADMIN_ROLE_ID
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
+async def get_current_session(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> dict:
+    """Cualquier usuaria con sesión válida."""
+    if credentials is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Missing bearer token")
+    return await validate_session(credentials.credentials)
+
+
 async def require_admin(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> dict:

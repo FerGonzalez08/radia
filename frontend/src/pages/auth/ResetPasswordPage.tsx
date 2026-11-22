@@ -19,6 +19,7 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [linkExpired, setLinkExpired] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -33,6 +34,7 @@ export default function ResetPasswordPage() {
       await resetPassword(token, password);
       navigate("/iniciar-sesion", { state: { passwordReset: true } });
     } catch (err) {
+      setLinkExpired(err instanceof ApiError && err.code === "RESET_LINK_EXPIRED");
       setError(err instanceof ApiError ? err.message : "No pudimos restablecer tu contraseña.");
     } finally {
       setLoading(false);
@@ -54,6 +56,11 @@ export default function ResetPasswordPage() {
     <AuthLayout eyebrow="Nueva contraseña" title="Restablece tu contraseña" subtitle="Elige una contraseña nueva y segura.">
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         {error && <Banner tone="danger">{error}</Banner>}
+        {linkExpired && (
+          <Link to="/recuperar-contrasena" className={styles.link}>
+            Solicitar nuevo enlace →
+          </Link>
+        )}
         <TextField
           label="Nueva contraseña"
           type="password"

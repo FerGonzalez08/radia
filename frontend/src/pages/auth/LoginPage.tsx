@@ -6,7 +6,7 @@ import { TextField } from "../../components/ui/TextField";
 import { Button } from "../../components/ui/Button";
 import { Banner } from "../../components/ui/Banner";
 import { useAuth } from "../../context/AuthContext";
-import { ApiError } from "../../services/api";
+import { ApiError, resendVerification } from "../../services/api";
 import styles from "./AuthForms.module.css";
 
 interface LocationState {
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Si llegamos aquí justo por un cierre de sesión manual (botón "Cerrar
@@ -36,9 +37,20 @@ export default function LoginPage() {
   // pueda colarse antes de descartar el "from" viejo.
   const [ignoreFromOnce] = useState(() => consumeExplicitLogoutFlag());
 
+  async function handleResend() {
+    setResendNotice(null);
+    try {
+      await resendVerification(correo);
+      setResendNotice("Si la cuenta está pendiente de verificar, te enviamos un nuevo enlace. Revisa tu correo.");
+    } catch (err) {
+      setResendNotice(err instanceof ApiError ? err.message : "No pudimos reenviar el correo. Intenta nuevamente.");
+    }
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setResendNotice(null);
     setNeedsVerification(false);
     setLoading(true);
     try {
@@ -80,9 +92,14 @@ export default function LoginPage() {
         {error && <Banner tone="danger">{error}</Banner>}
 
         {needsVerification && (
-          <Banner tone="warning" title="Debes verificar tu cuenta antes de iniciar sesión">
+          <Banner
+            tone="warning"
+            title="Debes verificar tu cuenta antes de iniciar sesión"
+            action={<button type="button" onClick={handleResend} className={styles.link}>Reenviar correo de verificación</button>}
+          >
             Te enviamos un correo con un enlace de verificación cuando te registraste. Revisa tu bandeja de entrada
             (y la carpeta de spam) y haz clic en el enlace para activar tu cuenta.
+            {resendNotice && <> {resendNotice}</>}
           </Banner>
         )}
 

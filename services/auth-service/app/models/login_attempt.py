@@ -1,12 +1,12 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String
+from sqlalchemy import func, Boolean, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
-from app.models.base import uuid_pk
+from app.models.base import utcnow, uuid_pk
 
 
 class LoginAttempt(Base):
@@ -22,4 +22,4 @@ class LoginAttempt(Base):
     ip_address: Mapped[str] = mapped_column(String(45), nullable=False)
     success: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now(), index=True)
